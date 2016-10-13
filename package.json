@@ -1,5 +1,5 @@
 {
-	"name": "Spred Media Service",
+	"name": "spred-media-service",
 	"version": "6.6.0",
 	"private": true,
 	"scripts": {

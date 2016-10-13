@@ -1,6 +1,6 @@
-# Media Service
+# Spred Media Service
 
-This Media Service is used by SpredCo.  
+This Spred Media Service is used by SpredCo.  
 This server is used to connect the [Spred Client](https://github.com/SpredCo/web-app) and the [Kurento Media Server](https://github.com/SpredCo/kurento-media-server).  
 
 ### Installation
