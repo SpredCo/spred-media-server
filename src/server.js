@@ -15,10 +15,9 @@
  *
  */
 
-var kurento = require('kurento-client');
-var CharpyServer = require('./charpy-server');
+var Server = require('./models/server');
 
-CharpyServer.start();
+Server.start();
 
 // /*
 //  * Definition of global variables.

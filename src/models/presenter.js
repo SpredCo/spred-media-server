@@ -1,35 +1,17 @@
 var Presenter = function(id) {
 	this.id = id;
+	this.pipeline = null;
+	this.webRtcEndpoint = null;
+	this.sdpAnswer = null;
+	this.sdpOffer = null;
 
 	return this;
 }
 
-Presenter.prototype.pipeline = function(pipeline) {
-	if (pipeline) {
-		this.pipeline = pipeline;
-	} else {
-		return this.pipeline;
-	}
-};
-
-Presenter.prototype.webRtcEndpoint = function(webRtcEndpoint) {
-	if (webRtcEndpoint) {
-		this.webRtcEndpoint = webRtcEndpoint;
-	} else {
-		return this.webRtcEndpoint;
-	}
-};
-
-Presenter.prototype.sdpAnswer = function(sdpAnswer) {
-	if (sdpAnswer) {
-		this.sdpAnswer = sdpAnswer;
-	} else {
-		return this.sdpAnswer;
-	}
-};
-
 Presenter.prototype.stop = function() {
-	this.pipeline.release();
+	if (this.pipeline) {
+		this.pipeline.release();
+	}
 	// if (user.isPresenter) {
 	// 	// for (var i in viewers) {
 	// 	// 	var viewer = viewers[i];

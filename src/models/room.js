@@ -1,3 +1,5 @@
+const _ = require('lodash');
+
 var Room = function(id) {
 	this.id = id;
 	this.presenter = null;
@@ -12,6 +14,12 @@ Room.prototype.addToQueue = function(user) {
 		this.users_pending.push(user);
 	}
 };
+
+Room.prototype.removeFromQueue = function(user) {
+	if (user) {
+		_.pull(this.users_pending, user);
+	}
+}
 
 Room.prototype.addViewer = function(viewer) {
 	if (viewer) {
