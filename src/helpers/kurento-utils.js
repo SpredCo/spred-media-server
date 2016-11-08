@@ -2,6 +2,7 @@ const kurento = require('kurento-client');
 const Presenter = require('../models/presenter');
 const Viewer = require('../models/viewer');
 const async = require('async');
+const _ = require('lodash');
 
 var KurentoUtils = function() {
 
@@ -147,13 +148,24 @@ KurentoUtils.prototype.createViewer = function(session, next) {
 	// }
 };
 
+KurentoUtils.prototype.runSavedIceCandidate = function(next) {
+	console.info(`${this.session.savedIceCandidate.length} candidate(s) will be add to the webRtcEndpoint of user with ID ${this.session.id}`);
+	if (this.session.savedIceCandidate.length) {
+		_.forEach(this.session.savedIceCandidate, function(savedIceCandidate) {
+			this.session.user.webRtcEndpoint.addIceCandidate(savedIceCandidate);
+		});
+	}
+	return next();
+}
+
 KurentoUtils.prototype.processIceCandidate = function(data, next) {
-	const candidate = kurento.getComplexType('IceCandidate')(data.candidate);
+	const iceCandidate = kurento.getComplexType('IceCandidate')(data.candidate);
 
 	if (this.session.user && this.session.user.webRtcEndpoint) {
 		console.info(`Sending candidate to ${this.session.user.id}`);
-		this.session.user.webRtcEndpoint.addIceCandidate(candidate);
+		this.session.user.webRtcEndpoint.addIceCandidate(iceCandidate);
 	} else {
+		this.session.addIceCandidateToQueue(iceCandidate);
 		console.log(`Got an ice candidate to store by ${this.session.id}`);
 	}
 	return next();
