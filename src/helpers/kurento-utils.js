@@ -148,11 +148,11 @@ KurentoUtils.prototype.createViewer = function(session, next) {
 	// }
 };
 
-KurentoUtils.prototype.runSavedIceCandidate = function(next) {
-	console.info(`${this.session.savedIceCandidate.length} candidate(s) will be add to the webRtcEndpoint of user with ID ${this.session.id}`);
-	if (this.session.savedIceCandidate.length) {
-		_.forEach(this.session.savedIceCandidate, function(savedIceCandidate) {
-			this.session.user.webRtcEndpoint.addIceCandidate(savedIceCandidate);
+KurentoUtils.prototype.runSavedIceCandidate = function(session, next) {
+	console.info(`${session.savedIceCandidate.length} candidate(s) will be add to the webRtcEndpoint of user with ID ${session.id}`);
+	if (session.savedIceCandidate.length) {
+		_.forEach(session.savedIceCandidate, function(savedIceCandidate) {
+			session.user.webRtcEndpoint.addIceCandidate(savedIceCandidate);
 		});
 	}
 	return next();

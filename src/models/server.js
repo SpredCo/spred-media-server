@@ -146,11 +146,11 @@ function onPresenterRequest(presenter_request, next) {
 			}, next), next);
 		},
 		(next) => {
-			session.room.removeFromQueue(this.session.id);
+			session.room.removeFromQueue(session.id);
 			session.room.presenter = session.user;
 			console.info(`User ${session.id} added as presenter in room ${session.room.id}`);
 			console.info(`${session.room.viewers.length} viewer(s) were waiting in the room.`);
-			KurentoUtils.runSavedIceCandidate.bind(this)(next);
+			KurentoUtils.runSavedIceCandidate(session, next);
 		}
 	], function(err) {
 		if (err) {
@@ -177,11 +177,11 @@ function onViewerRequest(viewer_request, next) {
 			}, next), next);
 		},
 		(next) => {
-			session.room.removeFromQueue(this.session.id);
+			session.room.removeFromQueue(session.id);
 			session.room.addViewer(session.user);
 			console.info(`User ${session.id} added as viewer in room ${session.room.id}`);
 			console.info(`${session.room.viewers.length - 1} viewer(s) were already in the room.`);
-			KurentoUtils.runSavedIceCandidate.bind(this)(next);
+			KurentoUtils.runSavedIceCandidate(session, next);
 		}
 	], function(err) {
 		if (err) {
