@@ -150,7 +150,6 @@ function onPresenterRequest(presenter_request, next) {
 			session.room.presenter = session.user;
 			console.info(`User ${session.id} added as presenter in room ${session.room.id}`);
 			console.info(`${session.room.viewers.length} viewer(s) were waiting in the room.`);
-			KurentoUtils.runSavedIceCandidate(session, next);
 		}
 	], function(err) {
 		if (err) {

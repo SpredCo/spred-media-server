@@ -35,6 +35,7 @@ KurentoUtils.prototype.createPresenter = function(kurentoClient, session, next) 
 			});
 		},
 		(next) => {
+			runSavedIceCandidate(session);
 			session.user.webRtcEndpoint.on('OnIceCandidate', function(event) {
 				var candidate = kurento.getComplexType('IceCandidate')(event.candidate);
 				console.log(`Sending candidate for presenter ${session.id} in room ${session.room.id}`);
@@ -155,14 +156,13 @@ KurentoUtils.prototype.createViewer = function(session, next) {
 	// }
 };
 
-KurentoUtils.prototype.runSavedIceCandidate = function(session, next) {
+KurentoUtils.prototype.runSavedIceCandidate = function(session) {
 	console.info(`${session.savedIceCandidate.length} candidate(s) will be add to the webRtcEndpoint of user with ID ${session.id}`);
 	if (session.savedIceCandidate.length) {
 		_.forEach(session.savedIceCandidate, function(savedIceCandidate) {
 			session.user.webRtcEndpoint.addIceCandidate(savedIceCandidate);
 		});
 	}
-	return next();
 }
 
 KurentoUtils.prototype.processIceCandidate = function(data, next) {
