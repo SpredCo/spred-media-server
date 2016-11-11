@@ -62,6 +62,7 @@ Server.prototype.start = function() {
 	}.bind(this));
 
 	wss.on('connection', function(socket) {
+		console.log("current session : ", this.session);
 		this.session = new Session(socket);
 
 		async.each(events['connection'], (fn, next) => fn.bind(this)(socket, next), function(err) {
