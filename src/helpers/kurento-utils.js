@@ -35,7 +35,7 @@ KurentoUtils.prototype.createPresenter = function(kurentoClient, session, next) 
 			});
 		},
 		(next) => {
-			runSavedIceCandidate(session);
+			this.runSavedIceCandidate(session);
 			session.user.webRtcEndpoint.on('OnIceCandidate', function(event) {
 				var candidate = kurento.getComplexType('IceCandidate')(event.candidate);
 				console.log(`Sending candidate for presenter ${session.id} in room ${session.room.id}`);
