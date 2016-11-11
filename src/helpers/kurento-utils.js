@@ -37,6 +37,7 @@ KurentoUtils.prototype.createPresenter = function(kurentoClient, session, next) 
 		(next) => {
 			session.user.webRtcEndpoint.on('OnIceCandidate', function(event) {
 				var candidate = kurento.getComplexType('IceCandidate')(event.candidate);
+				console.log(`Sending candidate for presenter ${session.id} in room ${session.room.id}`);
 				session.socket.emit('iceCandidate', {
 					candidate: candidate
 				});
@@ -49,6 +50,7 @@ KurentoUtils.prototype.createPresenter = function(kurentoClient, session, next) 
 					session.user.stop();
 					return next(error);
 				}
+				console.log(`sdpOffer have been process without errors for presenter ${session.id} in room ${session.room.id}`);
 				session.user.sdpAnswer = sdpAnswer;
 				return next();
 			});
@@ -59,12 +61,13 @@ KurentoUtils.prototype.createPresenter = function(kurentoClient, session, next) 
 					session.user.stop();
 					return next(error);
 				}
+				console.log(`Candidates have been gathered for presenter ${session.id} in room ${session.room.id}`);
 				return next();
 			});
 		}
 	], function(err) {
 		if (err) {
-			console.log(`Got an error from user ${this.session.id}: ${error}`);
+			console.log(`Got an error from presenter ${session.id} in room ${session.room.id} : ${error}`);
 			return next(error);
 		}
 		return next();
@@ -97,6 +100,7 @@ KurentoUtils.prototype.createViewer = function(session, next) {
 		(next) => {
 			session.user.webRtcEndpoint.on('OnIceCandidate', function(event) {
 				var candidate = kurento.getComplexType('IceCandidate')(event.candidate);
+				console.log(`Sending candidate for viever ${session.id} in room ${session.room.id}`);
 				session.socket.emit('iceCandidate', {
 					candidate: candidate
 				});
@@ -109,6 +113,7 @@ KurentoUtils.prototype.createViewer = function(session, next) {
 					session.user.stop();
 					return next(error);
 				}
+				console.log(`sdpOffer has been process without errors for viewer ${session.id} in room ${session.room.id}`);
 				session.user.sdpAnswer = sdpAnswer;
 				return next();
 			});
@@ -119,6 +124,7 @@ KurentoUtils.prototype.createViewer = function(session, next) {
 					session.user.stop();
 					return next(error);
 				}
+				console.log(`Viewer ${session.id} in room ${session.room.id} has been connected without errors to presenter ${session.room.presenter.id} in room ${session.room.id}`);
 				return next();
 			});
 		},
@@ -128,6 +134,7 @@ KurentoUtils.prototype.createViewer = function(session, next) {
 					session.user.stop();
 					return next(error);
 				}
+				console.log(`Candidates have been gathered for viewer ${session.id} in room ${session.room.id}`);
 				return next();
 			});
 		}
