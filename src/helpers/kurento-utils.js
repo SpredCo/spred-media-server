@@ -99,10 +99,11 @@ KurentoUtils.prototype.createViewer = function(session, next) {
 			});
 		},
 		(next) => {
+			this.runSavedIceCandidate(session);
 			session.user.webRtcEndpoint.on('OnIceCandidate', function(event) {
 				var candidate = kurento.getComplexType('IceCandidate')(event.candidate);
 				console.log(`Sending candidate for viever ${session.id} in room ${session.room.id}`);
-				session.socket.emit('iceCandidate', {
+				session.socket.emit('ice_candidate', {
 					candidate: candidate
 				});
 			});

@@ -180,7 +180,6 @@ function onViewerRequest(viewer_request, next) {
 			session.room.addViewer(session.user);
 			console.info(`User ${session.id} added as viewer in room ${session.room.id}`);
 			console.info(`${session.room.viewers.length - 1} viewer(s) were already in the room.`);
-			KurentoUtils.runSavedIceCandidate(session, next);
 		}
 	], function(err) {
 		if (err) {
