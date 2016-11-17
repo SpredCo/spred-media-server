@@ -62,81 +62,78 @@ Server.prototype.start = function() {
 	}.bind(this));
 
 	wss.on('connection', function(socket) {
-		console.log("current session : ", this.session);
-		this.session = new Session(socket);
+		const session = new Session(socket);
 
-		async.each(events['connection'], (fn, next) => fn.bind(this)(socket, next), function(err) {
+		async.each(events['connection'], (fn, next) => fn(session, next), function(err) {
 			if (err) {
 				console.error(`Got an error from ${socket.id} : ${err}`);
 			} else {
-				this.session.socket.on('disconnect', function() {
-					async.each(events['disconnect'], (fn, next) => fn.bind(this)(next));
-				}.bind(this));
+				session.socket.on('disconnect', function() {
+					async.each(events['disconnect'], (fn, next) => fn(session, next));
+				});
 			}
-		}.bind(this));
+		});
 
-		this.session.socket.on('presenter_request', function(presenter_request) {
-			async.each(events['presenter_request'], (fn, next) => fn.bind(this)(presenter_request, next));
-		}.bind(this));
+		session.socket.on('presenter_request', function(presenter_request) {
+			async.each(events['presenter_request'], (fn, next) => fn(session, presenter_request, next));
+		});
 
-		this.session.socket.on('viewer_request', function(viewer_request) {
-			async.each(events['viewer_request'], (fn, next) => fn.bind(this)(viewer_request, next));
-		}.bind(this));
+		session.socket.on('viewer_request', function(viewer_request) {
+			async.each(events['viewer_request'], (fn, next) => fn(session, viewer_request, next));
+		});
 
-		this.session.socket.on('ice_candidate', function(ice_candidate) {
-			async.each(events['ice_candidate'], (fn, next) => fn.bind(this)(ice_candidate, next));
-		}.bind(this));
+		session.socket.on('ice_candidate', function(ice_candidate) {
+			async.each(events['ice_candidate'], (fn, next) => fn(session, ice_candidate, next));
+		});
 
 	}.bind(this));
 };
 
-function onConnect(socket, next) {
-	console.log(`Connection received with sessionId ${this.session.id}`);
+function onConnect(session, next) {
+	console.log(`Connection received with sessionId ${session.id}`);
 
-	this.session.socket.on('auth_answer', function(auth_answer) {
-		async.each(events['auth_answer'], (fn, next) => fn.bind(this)(auth_answer, next));
-	}.bind(this));
-	async.each(events['auth_request'], (fn, next) => fn.bind(this)(socket, next));
+	session.socket.on('auth_answer', function(auth_answer) {
+		async.each(events['auth_answer'], (fn, next) => fn(session, auth_answer, next));
+	});
+	async.each(events['auth_request'], (fn, next) => fn(session, next));
 	return next();
 }
 
-function onDisconnect(next) {
-	if (this.session && this.session.id) {
-		console.log(`Connection ${this.session.id} closed`);
+function onDisconnect(session, next) {
+	if (session && session.id) {
+		console.log(`Connection ${session.id} closed`);
 	} else {
 		console.log(`Anonymous connection closed`);
 	}
-	if (this.session && this.session.user) {
-		this.session.user.stop();
+	if (session && session.user) {
+		session.user.stop();
 	}
-	this.session = null;
+	session = null;
 	return next();
 }
 
-function onAuthRequest(socket, next) {
-	this.session.socket.emit('auth_request', {});
+function onAuthRequest(session, next) {
+	session.socket.emit('auth_request', {});
 	return next();
 }
 
-function onAuthAnswer(auth_answer, next) {
-	this.session.room = _.find(this.rooms, function(room) {
+function onAuthAnswer(session, auth_answer, next) {
+	session.room = _.find(this.rooms, function(room) {
 		return room.id === auth_answer.id
 	});
-	if (this.session.room) {
-		this.session.room.addToQueue(this.session.id);
+	if (session.room) {
+		session.room.addToQueue(this.session.id);
 	} else {
-		this.session.room = new Room(auth_answer.id);
-		this.session.room.addToQueue(this.session.id);
-		this.rooms.push(this.session.room);
+		session.room = new Room(auth_answer.id);
+		session.room.addToQueue(session.id);
+		rooms.push(session.room);
 	}
-	this.session.socket.join(auth_answer.id);
-	console.log(`${this.session.id} joined the room with id : ${auth_answer.id}`);
-	console.log(`Actual number of rooms : ${this.rooms.length}`);
+	session.socket.join(auth_answer.id);
+	console.log(`${session.id} joined the room with id : ${auth_answer.id}`);
 	return next();
 }
 
-function onPresenterRequest(presenter_request, next) {
-	const session = this.session;
+function onPresenterRequest(session, presenter_request, next) {
 	session.sdpOffer = presenter_request.sdpOffer;
 	async.waterfall([
 		(next) => KurentoUtils.createPresenter(this.kurentoClient, session, next),
@@ -164,10 +161,8 @@ function onPresenterRequest(presenter_request, next) {
 	});
 }
 
-function onViewerRequest(viewer_request, next) {
-	const session = this.session;
+function onViewerRequest(session, viewer_request, next) {
 	session.sdpOffer = viewer_request.sdpOffer;
-
 	async.waterfall([
 		(next) => KurentoUtils.createViewer(session, next),
 		(next) => {
@@ -193,15 +188,15 @@ function onViewerRequest(viewer_request, next) {
 	});
 }
 
-function onPresenterAnswer(presenter_answer, next) {
-	console.info(`Presenter answer replied to ${this.session.id}`);
-	this.session.socket.emit('presenter_answer', presenter_answer);
+function onPresenterAnswer(session, presenter_answer, next) {
+	console.info(`Presenter answer replied to ${session.id}`);
+	session.socket.emit('presenter_answer', presenter_answer);
 	return next();
 }
 
-function onViewerAnswer(viewer_answer, next) {
-	console.info(`Viewer answer replied to ${this.session.id}`);
-	this.session.socket.emit('viewer_answer', viewer_answer);
+function onViewerAnswer(session, viewer_answer, next) {
+	console.info(`Viewer answer replied to ${session.id}`);
+	session.socket.emit('viewer_answer', viewer_answer);
 	return next();
 }
 

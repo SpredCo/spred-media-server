@@ -142,8 +142,8 @@ KurentoUtils.prototype.createViewer = function(session, next) {
 		}
 	], function(err) {
 		if (err) {
-			console.log(`Got an error from user ${session.id}: ${error}`);
-			return next(error);
+			console.log(`Got an error from user ${session.id}: ${err}`);
+			return next(err);
 		}
 		return next();
 	});
