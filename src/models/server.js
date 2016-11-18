@@ -118,17 +118,22 @@ function onAuthRequest(session, next) {
 }
 
 function onAuthAnswer(session, auth_answer, next) {
+	// Token du type => auth_answer.spredcast_token
+	// TODO: Appel en base pour vérifier que le spredcast token existe
+	// TODO: Verifier que le mec ait accès à la room
+	// TODO: const currentRoom = Mongo.getRoom
+	// TODO: Gérer si le mec n'a pas le droit
 	session.room = _.find(this.rooms, function(room) {
-		return room.id === auth_answer.id
+		return room.id === //currentRoom.id
 	});
 	if (session.room) {
-		session.room.addToQueue(this.session.id);
+		session.room.addToQueue(session.id);
 	} else {
-		session.room = new Room(auth_answer.id);
+		session.room = new Room( /*currentRoom.id*/ );
 		session.room.addToQueue(session.id);
 		rooms.push(session.room);
 	}
-	session.socket.join(auth_answer.id);
+	session.socket.join( /*currentRoom.id*/ );
 	console.log(`${session.id} joined the room with id : ${auth_answer.id}`);
 	return next();
 }

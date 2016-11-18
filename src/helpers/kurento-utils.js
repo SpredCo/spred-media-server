@@ -74,13 +74,6 @@ KurentoUtils.prototype.createPresenter = function(kurentoClient, session, next) 
 		return next();
 	});
 
-	// if (candidatesQueue[session.id]) {
-	// 	while (candidatesQueue[session.id].length) {
-	// 		var candidate = candidatesQueue[session.id].shift();
-	// 		webRtcEndpoint.addIceCandidate(candidate);
-	// 	}
-	// }
-
 };
 
 KurentoUtils.prototype.createViewer = function(session, next) {
@@ -147,14 +140,6 @@ KurentoUtils.prototype.createViewer = function(session, next) {
 		}
 		return next();
 	});
-
-
-	// if (candidatesQueue[session.id]) {
-	// 	while (candidatesQueue[session.id].length) {
-	// 		var candidate = candidatesQueue[session.id].shift();
-	// 		webRtcEndpoint.addIceCandidate(candidate);
-	// 	}
-	// }
 };
 
 KurentoUtils.prototype.runSavedIceCandidate = function(session) {
