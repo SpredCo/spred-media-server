@@ -23,7 +23,9 @@
     "jasmine": "^2.5.2",
     "kurento-client": "^6.6.0",
     "lodash": "^4.16.4",
+    "mongoose": "^4.6.8",
     "socket.io": "^1.5.1",
+    "spred-common": "git+ssh://git@github.com/spredco/common.git",
     "url": "^0.11.0"
   }
 }

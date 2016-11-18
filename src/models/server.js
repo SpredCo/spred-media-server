@@ -10,6 +10,21 @@ const KurentoUtils = require('../helpers/kurento-utils');
 const Room = require('./room');
 const Session = require('./session');
 
+const mongoose = require('mongoose');
+
+mongoose.connection.on('error', function () {
+    console.error('Error');
+});
+
+mongoose.connection.on('open', function () {
+    console.log('connection success');
+});
+
+const connectionStr = 'mongodb://sharemyscreen.fr:27017/spred';
+mongoose.connect(connectionStr);
+
+const common = require('spred-common');
+
 const events = {
 	'connection': [onConnect],
 	'disconnect': [onDisconnect],
@@ -123,8 +138,30 @@ function onAuthAnswer(session, auth_answer, next) {
 	// TODO: Verifier que le mec ait accès à la room
 	// TODO: const currentRoom = Mongo.getRoom
 	// TODO: Gérer si le mec n'a pas le droit
+	var currentRoom = null;
+
+    common.castTokenModel.getByToken(auth_answer, function (err, fToken) {
+        if (err) {
+            console.log('ERROR');
+        } else if (fToken === null) {
+            console.log('Unauthorized')
+        } else {
+        	currentRoom = new Room(fToken.cast);
+        	currentRoom.presenter = fToken.presenter;
+
+        	// Je sais pas si t'as besoin de ça
+            const user = fToken.user;
+            const client = fToken.client;
+            const pseudo = fToken.pseudo;
+
+            if (user === null) {
+                console.log('Guest user');
+            }
+        }
+    });
+
 	session.room = _.find(this.rooms, function(room) {
-		return room.id === //currentRoom.id
+		return room.id === currentRoom.id
 	});
 	if (session.room) {
 		session.room.addToQueue(session.id);
