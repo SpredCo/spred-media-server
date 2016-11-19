@@ -24,6 +24,7 @@
     "kurento-client": "^6.6.0",
     "lodash": "^4.16.4",
     "socket.io": "^1.5.1",
+    "spred-common": "git+https://github.com/SpredCo/common.git",
     "url": "^0.11.0"
   }
 }

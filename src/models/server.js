@@ -9,6 +9,19 @@ const kurento = require('kurento-client');
 const KurentoUtils = require('../helpers/kurento-utils');
 const Room = require('./room');
 const Session = require('./session');
+const mongoose = require('mongoose');
+const common = require('spred-common');
+
+mongoose.connection.on('error', function() {
+	console.error('Error');
+});
+
+mongoose.connection.on('open', function() {
+	console.info('MongoDB: connection success');
+});
+
+const connectionStr = 'mongodb://sharemyscreen.fr:27017/spred';
+mongoose.connect(connectionStr);
 
 const events = {
 	'connection': [onConnect],
@@ -33,14 +46,13 @@ var Server = function(options) {
 		cert: fs.readFileSync('keys/server.crt')
 	};
 
-	this.rooms = [];
-
 	console.log("Connecting server to Kurento Media Server...");
 	kurento(this.conf.kms_uri, function(error, _kurentoClient) {
 		if (error) {
 			console.error("Could not find media server at address" + this.conf.kms_uri + ". Exiting with error : " + error);
 			return null;
 		}
+
 		console.log("Connection to Kurento Media Server : OK");
 		this.kurentoClient = _kurentoClient;
 	}.bind(this));
@@ -48,18 +60,22 @@ var Server = function(options) {
 	return this;
 };
 
+
+
 Server.prototype.start = function() {
 	var app = express();
-
 	var asUrl = url.parse(this.conf.as_uri);
 	var port = asUrl.port;
 	var httpsServer = https.createServer(this.options, app);
 	var wss = new io(httpsServer);
 
+	// TODO: ROOMS IN THE SERVER -> Need to get them from DB with Spred is ready
+	const rooms = [];
+
 	httpsServer.listen(port, function() {
 		console.log('Kurento Tutorial started');
 		console.log(`Open ${url.format(asUrl)} with a WebRTC capable browser`);
-	}.bind(this));
+	});
 
 	wss.on('connection', function(socket) {
 		const session = new Session(socket);
@@ -86,15 +102,14 @@ Server.prototype.start = function() {
 			async.each(events['ice_candidate'], (fn, next) => fn(session, ice_candidate, next));
 		});
 
+		session.socket.on('auth_answer', function(auth_answer) {
+			async.each(events['auth_answer'], (fn, next) => fn(session, rooms, auth_answer, next));
+		}.bind(this));
 	}.bind(this));
 };
 
 function onConnect(session, next) {
 	console.log(`Connection received with sessionId ${session.id}`);
-
-	session.socket.on('auth_answer', function(auth_answer) {
-		async.each(events['auth_answer'], (fn, next) => fn(session, auth_answer, next));
-	});
 	async.each(events['auth_request'], (fn, next) => fn(session, next));
 	return next();
 }
@@ -117,25 +132,35 @@ function onAuthRequest(session, next) {
 	return next();
 }
 
-function onAuthAnswer(session, auth_answer, next) {
-	// Token du type => auth_answer.spredcast_token
-	// TODO: Appel en base pour vérifier que le spredcast token existe
-	// TODO: Verifier que le mec ait accès à la room
-	// TODO: const currentRoom = Mongo.getRoom
-	// TODO: Gérer si le mec n'a pas le droit
-	session.room = _.find(this.rooms, function(room) {
-		return room.id === //currentRoom.id
+function onAuthAnswer(session, rooms, auth_answer, next) {
+	var currentRoom = null;
+	console.log(`Got token ${auth_answer.token} from ${session.id}`);
+	common.castTokenModel.getByToken(auth_answer.token, function(err, fToken) {
+		if (err) {
+			console.error(`Got error when trying to get Spredcast for ${session.id} : ${err}`);
+		} else if (fToken === null) {
+			console.error(`${session.id} trying to access a spredcast without permissions`);
+		} else {
+			// const user = fToken.user;
+			// const client = fToken.client;
+			// const pseudo = fToken.pseudo;
+
+			console.info(`${session.id} now identified as ${fToken.pseudo}`);
+			session.room = _.find(rooms, function(room) {
+				return room.id === fToken.cast.id
+			});
+			if (!session.room) {
+				console.info(`${fToken.pseudo} is joining in his room(${fToken.cast.id}) as first.`);
+				session.room = new Room(fToken.cast.id);
+				rooms.push(session.room);
+			} else {
+				console.info(`${fToken.pseudo} is joining the room(${fToken.cast.id}) with already ${session.room.viewers.length} viewer(s)`);
+			}
+			session.room.addToQueue(session.id);
+			session.socket.join(fToken.cast.id);
+		}
+		return next();
 	});
-	if (session.room) {
-		session.room.addToQueue(session.id);
-	} else {
-		session.room = new Room( /*currentRoom.id*/ );
-		session.room.addToQueue(session.id);
-		rooms.push(session.room);
-	}
-	session.socket.join( /*currentRoom.id*/ );
-	console.log(`${session.id} joined the room with id : ${auth_answer.id}`);
-	return next();
 }
 
 function onPresenterRequest(session, presenter_request, next) {
