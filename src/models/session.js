@@ -4,6 +4,7 @@ var Session = function(socket) {
 	this.user = null;
 	this.spredCast = null;
 	this.savedIceCandidate = [];
+	this.castToken = null;
 
 	return this;
 }

@@ -145,19 +145,20 @@ function onAuthAnswer(session, rooms, auth_answer, next) {
 			// const client = fToken.client;
 			// const pseudo = fToken.pseudo;
 
+			session.castToken = fToken;
 			console.info(`${session.id} now identified as ${fToken.pseudo}`);
-			session.room = _.find(rooms, function(room) {
-				return room.id === fToken.cast.id
+			session.spredCast = _.find(rooms, function(room) {
+				return room.id === session.castToken.cast.id
 			});
-			if (!session.room) {
-				console.info(`${fToken.pseudo} is joining in his room(${fToken.cast.id}) as first.`);
-				session.room = new Room(fToken.cast.id);
-				rooms.push(session.room);
+			if (!session.spredCast) {
+				console.info(`${session.castToken.pseudo} is joining in his room(${session.castToken.cast.id}) as first.`);
+				session.spredCast = new Room(session.castToken.cast.id);
+				rooms.push(session.spredCast);
 			} else {
-				console.info(`${fToken.pseudo} is joining the room(${fToken.cast.id}) with already ${session.room.viewers.length} viewer(s)`);
+				console.info(`${session.castToken.pseudo} is joining the room(${session.castToken.cast.id}) with already ${session.spredCast.viewers.length} viewer(s)`);
 			}
-			session.room.addToQueue(session.id);
-			session.socket.join(fToken.cast.id);
+			session.spredCast.addToQueue(session.id);
+			session.socket.join(session.castToken.cast.id);
 		}
 		return next();
 	});
