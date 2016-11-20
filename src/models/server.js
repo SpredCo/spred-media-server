@@ -6,34 +6,13 @@ const url = require('url');
 const io = require('socket.io');
 const _ = require('lodash');
 const kurento = require('kurento-client');
-const KurentoUtils = require('../helpers/kurento-utils');
-const Room = require('./room');
-const Session = require('./session');
-const mongoose = require('mongoose');
+const mongo = require('../mongo');
 const common = require('spred-common');
 
-mongoose.connection.on('error', function() {
-	console.error('Error');
-});
-
-mongoose.connection.on('open', function() {
-	console.info('MongoDB: connection success');
-});
-
-const connectionStr = 'mongodb://sharemyscreen.fr:27017/spred';
-mongoose.connect(connectionStr);
-
-const events = {
-	'connection': [onConnect],
-	'disconnect': [onDisconnect],
-	'auth_request': [onAuthRequest],
-	'auth_answer': [onAuthAnswer],
-	'presenter_request': [onPresenterRequest],
-	'presenter_answer': [onPresenterAnswer],
-	'viewer_request': [onViewerRequest],
-	'viewer_answer': [onViewerAnswer],
-	'ice_candidate': [KurentoUtils.processIceCandidate]
-}
+const KurentoUtils = require('../helpers/kurento-utils');
+const Spredcast = require('./spredcast');
+const Session = require('./session');
+const User = require('./user');
 
 var Server = function(options) {
 	this.conf = {
@@ -60,8 +39,6 @@ var Server = function(options) {
 	return this;
 };
 
-
-
 Server.prototype.start = function() {
 	var app = express();
 	var asUrl = url.parse(this.conf.as_uri);
@@ -69,8 +46,8 @@ Server.prototype.start = function() {
 	var httpsServer = https.createServer(this.options, app);
 	var wss = new io(httpsServer);
 
-	// TODO: ROOMS IN THE SERVER -> Need to get them from DB with Spred is ready
-	const rooms = [];
+	// TODO: SPREDCASTS IN THE SERVER -> Need to get them from DB with Spred is ready
+	const spredcasts = [];
 
 	httpsServer.listen(port, function() {
 		console.log('Kurento Tutorial started');
@@ -80,155 +57,115 @@ Server.prototype.start = function() {
 	wss.on('connection', function(socket) {
 		const session = new Session(socket);
 
-		async.each(events['connection'], (fn, next) => fn(session, next), function(err) {
-			if (err) {
-				console.error(`Got an error from ${socket.id} : ${err}`);
-			} else {
-				session.socket.on('disconnect', function() {
-					async.each(events['disconnect'], (fn, next) => fn(session, next));
-				});
-			}
-		});
+		requestIdentity(session);
 
-		session.socket.on('presenter_request', function(presenter_request) {
-			async.each(events['presenter_request'], (fn, next) => fn(session, presenter_request, next));
-		});
-
-		session.socket.on('viewer_request', function(viewer_request) {
-			async.each(events['viewer_request'], (fn, next) => fn(session, viewer_request, next));
+		session.socket.on('disconnect', function() {
+			endSession(session);
 		});
 
 		session.socket.on('ice_candidate', function(ice_candidate) {
-			async.each(events['ice_candidate'], (fn, next) => fn(session, ice_candidate, next));
+			KurentoUtils.processIceCandidate(session, ice_candidate, next);
 		});
 
 		session.socket.on('auth_answer', function(auth_answer) {
-			async.each(events['auth_answer'], (fn, next) => fn(session, rooms, auth_answer, next));
-		}.bind(this));
+			onAuthAnswer(session, spredcasts, auth_answer);
+		});
 	}.bind(this));
 };
 
-function onConnect(session, next) {
+function requestIdentity(session) {
 	console.log(`Connection received with sessionId ${session.id}`);
-	async.each(events['auth_request'], (fn, next) => fn(session, next));
-	return next();
+	session.socket.emit('auth_request', {});
 }
 
-function onDisconnect(session, next) {
+function endSession(session) {
 	if (session && session.id) {
-		console.log(`Connection ${session.id} closed`);
+		console.info(`Connection with ${session.id} lost.`)
+		session.close();
 	} else {
 		console.log(`Anonymous connection closed`);
 	}
-	if (session && session.user) {
-		session.user.stop();
-	}
 	session = null;
-	return next();
 }
 
-function onAuthRequest(session, next) {
-	session.socket.emit('auth_request', {});
-	return next();
-}
-
-function onAuthAnswer(session, rooms, auth_answer, next) {
-	var currentRoom = null;
-	console.log(`Got token ${auth_answer.token} from ${session.id}`);
-	common.castTokenModel.getByToken(auth_answer.token, function(err, fToken) {
-		if (err) {
-			console.error(`Got error when trying to get Spredcast for ${session.id} : ${err}`);
-		} else if (fToken === null) {
-			console.error(`${session.id} trying to access a spredcast without permissions`);
-		} else {
-			// const user = fToken.user;
-			// const client = fToken.client;
-			// const pseudo = fToken.pseudo;
+function onAuthAnswer(session, spredcasts, auth_answer) {
+	async.waterfall([
+		(next) => common.castTokenModel.getByToken(auth_answer.token, next),
+		(fToken, next) => {
+			if (fToken === null) {
+				console.error(`${session.id} trying to access a spredcast without permissions`);
+				return next({
+					message: "You don't have permissions to access this sprecast"
+				});
+			}
+			session.user = new User(fToken.user, fToken.pseudo);
+			session.sdpOffer = auth_answer.sdpOffer;
 
 			session.castToken = fToken;
 			console.info(`${session.id} now identified as ${fToken.pseudo}`);
-			session.spredCast = _.find(rooms, function(room) {
-				return room.id === session.castToken.cast.id
+			session.spredCast = _.find(spredcasts, function(spredcast) {
+				return spredcast.id === session.castToken.cast.id
 			});
 			if (!session.spredCast) {
-				console.info(`${session.castToken.pseudo} is joining in his room(${session.castToken.cast.id}) as first.`);
-				session.spredCast = new Room(session.castToken.cast.id);
-				rooms.push(session.spredCast);
+				console.info(`${session.castToken.pseudo} is joining in his spredcast(${session.castToken.cast.id}) as first.`);
+				session.spredCast = new Spredcast(session.castToken.cast.id);
+				spredcasts.push(session.spredCast);
 			} else {
-				console.info(`${session.castToken.pseudo} is joining the room(${session.castToken.cast.id}) with already ${session.spredCast.viewers.length} viewer(s)`);
+				console.info(`${session.castToken.pseudo} is joining the spredcast(${session.castToken.cast.id}) with already ${session.spredCast.viewers.length} viewer(s)`);
 			}
-			session.spredCast.addToQueue(session.id);
 			session.socket.join(session.castToken.cast.id);
+			if (fToken.presenter) {
+				initializePresenter(session, next);
+			} else {
+				if (session.spredcast.isLive) {
+					initializeViewer(session, next);
+				} else {
+					session.spredCast.addToPendingQueue(session);
+				}
+				return next();
+			}
 		}
-		return next();
+	], function(err) {
+		if (err) {
+			console.error(`Got error when trying to get Spredcast for ${session.id} : ${err}`);
+			session.socket.emit('auth_answer', {
+				status: 'rejected',
+				message: err
+			});
+		} else {
+			session.socket.emit('auth_answer', {
+				status: 'accepted',
+				sdpAnswer: session.sdpAnswer
+			});
+		}
 	});
 }
 
-function onPresenterRequest(session, presenter_request, next) {
-	session.sdpOffer = presenter_request.sdpOffer;
+function initializePresenter(session, next) {
 	async.waterfall([
 		(next) => KurentoUtils.createPresenter(this.kurentoClient, session, next),
 		(next) => {
-			async.each(events['presenter_answer'], (fn, next) => fn.bind(this)({
-				response: 'accepted',
-				sdpAnswer: session.user.sdpAnswer
-			}, next), next);
-		},
-		(next) => {
-			session.room.removeFromQueue(session.id);
-			session.room.presenter = session.user;
-			console.info(`User ${session.id} added as presenter in room ${session.room.id}`);
-			console.info(`${session.room.viewers.length} viewer(s) were waiting in the room.`);
+			session.spredcast.removeFromPendingQueue(session);
+			session.spredcast.presenter = session;
+			session.spredcast.isLive = true;
+			async.eachLimit(session.spredcast.session_pending, 100, (session, next) => initializeViewer(session, next));
+			console.info(`User ${session.user.pseudo} added as presenter in spredcast ${session.spredcast.id}`);
+			console.info(`${session.spredcast.user_pending.length} viewer(s) were waiting in the room.`);
+			return next(null, session.sdpAnswer);
 		}
-	], function(err) {
-		if (err) {
-			async.each(events['presenter_answer'], (fn, next) => fn.bind(this)({
-				response: 'rejected',
-				message: err
-			}, next), next);
-		} else {
-			return next();
-		}
-	});
+	], next);
 }
 
-function onViewerRequest(session, viewer_request, next) {
-	session.sdpOffer = viewer_request.sdpOffer;
+function initializeViewer(session, next) {
 	async.waterfall([
 		(next) => KurentoUtils.createViewer(session, next),
 		(next) => {
-			async.each(events['viewer_answer'], (fn, next) => fn.bind(this)({
-				response: 'accepted',
-				sdpAnswer: session.user.sdpAnswer
-			}, next), next);
-		},
-		(next) => {
-			session.room.removeFromQueue(session.id);
-			session.room.addViewer(session.user);
-			console.info(`User ${session.id} added as viewer in room ${session.room.id}`);
-			console.info(`${session.room.viewers.length - 1} viewer(s) were already in the room.`);
+			session.room.removeFromQueue(session);
+			session.room.addViewer(session);
+			console.info(`User ${session.user.pseudo} added as viewer in room ${session.spredcast.id}`);
+			console.info(`${session.spredcast.viewers.length - 1} viewer(s) were already in the room.`);
 		}
-	], function(err) {
-		if (err) {
-			async.each(events['viewer_answer'], (fn, next) => fn.bind(this)({
-				response: 'rejected',
-				message: err
-			}, next), next);
-		}
-		return next();
-	});
-}
-
-function onPresenterAnswer(session, presenter_answer, next) {
-	console.info(`Presenter answer replied to ${session.id}`);
-	session.socket.emit('presenter_answer', presenter_answer);
-	return next();
-}
-
-function onViewerAnswer(session, viewer_answer, next) {
-	console.info(`Viewer answer replied to ${session.id}`);
-	session.socket.emit('viewer_answer', viewer_answer);
-	return next();
+	], next);
 }
 
 module.exports = new Server();
