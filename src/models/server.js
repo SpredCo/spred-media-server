@@ -64,7 +64,7 @@ Server.prototype.start = function() {
 		});
 
 		session.socket.on('ice_candidate', function(ice_candidate) {
-			KurentoUtils.processIceCandidate(session, ice_candidate, next);
+			KurentoUtils.processIceCandidate(session, ice_candidate);
 		});
 
 		session.socket.on('auth_answer', function(auth_answer) {
@@ -95,7 +95,7 @@ function onAuthAnswer(session, spredcasts, auth_answer) {
 			if (fToken === null) {
 				console.error(`${session.id} trying to access a spredcast without permissions`);
 				return next({
-					message: "You don't have permissions to access this sprecast"
+					message: "You don't have permissions to access this spredcast"
 				});
 			}
 			session.user = new User(fToken.user, fToken.pseudo);
@@ -115,19 +115,19 @@ function onAuthAnswer(session, spredcasts, auth_answer) {
 			}
 			session.socket.join(session.castToken.cast.id);
 			if (fToken.presenter) {
-				initializePresenter(session, next);
+				return initializePresenter(session, next);
 			} else {
-				if (session.spredcast.isLive) {
-					initializeViewer(session, next);
+				if (session.spredCast.isLive) {
+					return initializeViewer(session, next);
 				} else {
 					session.spredCast.addToPendingQueue(session);
+					return next("Presenter is not live yet.");
 				}
-				return next();
 			}
 		}
 	], function(err) {
 		if (err) {
-			console.error(`Got error when trying to get Spredcast for ${session.id} : ${err}`);
+			console.error(`Got error when trying to get Spredcast for ${session.id} : `, err);
 			session.socket.emit('auth_answer', {
 				status: 'rejected',
 				message: err

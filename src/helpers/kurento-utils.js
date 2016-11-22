@@ -127,22 +127,21 @@ KurentoUtils.prototype.runSavedIceCandidate = function(session) {
 	console.info(`${session.savedIceCandidate.length} candidate(s) will be add to the webRtcEndpoint of user with ID ${session.id}`);
 	if (session.savedIceCandidate.length) {
 		_.forEach(session.savedIceCandidate, function(savedIceCandidate) {
-			session.user.webRtcEndpoint.addIceCandidate(savedIceCandidate);
+			session.webRtcEndpoint.addIceCandidate(savedIceCandidate);
 		});
 	}
 }
 
-KurentoUtils.prototype.processIceCandidate = function(data, next) {
+KurentoUtils.prototype.processIceCandidate = function(session, data) {
 	const iceCandidate = kurento.getComplexType('IceCandidate')(data.candidate);
 
-	if (this.session.user && this.session.user.webRtcEndpoint) {
-		console.info(`Sending candidate to ${this.session.user.id}`);
-		this.session.user.webRtcEndpoint.addIceCandidate(iceCandidate);
+	if (session.user && session.webRtcEndpoint) {
+		console.info(`Sending candidate to ${session.user.pseudo}`);
+		session.webRtcEndpoint.addIceCandidate(iceCandidate);
 	} else {
-		this.session.addIceCandidateToQueue(iceCandidate);
-		console.log(`Got an ice candidate to store by ${this.session.id}`);
+		session.addIceCandidateToQueue(iceCandidate);
+		console.log(`Got an ice candidate to store by ${session.id}`);
 	}
-	return next();
 };
 
 module.exports = new KurentoUtils();

@@ -32,7 +32,7 @@ Session.prototype.close = function() {
 	} else if (this.webRtcEndpoint) {
 		this.webRtcEndpoint.release();
 	}
-	console.info(`Session[${this.id}] with user[${this.user.pseudo}] now close.`);
+	console.info(`Session[${this.id}] with user[${this.user ? this.user.pseudo : 'anonymous'}] now close.`);
 }
 
 module.exports = Session;
