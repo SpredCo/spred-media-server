@@ -56,6 +56,7 @@ Server.prototype.start = function() {
 
 	wss.on('connection', function(socket) {
 		const session = new Session(socket);
+		const kurentoClient = this.kurentoClient;
 
 		requestIdentity(session);
 
@@ -68,7 +69,7 @@ Server.prototype.start = function() {
 		});
 
 		session.socket.on('auth_answer', function(auth_answer) {
-			onAuthAnswer(session, spredcasts, auth_answer);
+			onAuthAnswer(kurentoClient, session, spredcasts, auth_answer);
 		});
 	}.bind(this));
 };
@@ -88,7 +89,7 @@ function endSession(session) {
 	session = null;
 }
 
-function onAuthAnswer(session, spredcasts, auth_answer) {
+function onAuthAnswer(kurentoClient, session, spredcasts, auth_answer) {
 	async.waterfall([
 		(next) => common.castTokenModel.getByToken(auth_answer.token, next),
 		(fToken, next) => {
@@ -115,7 +116,8 @@ function onAuthAnswer(session, spredcasts, auth_answer) {
 			}
 			session.socket.join(session.castToken.cast.id);
 			if (fToken.presenter) {
-				return initializePresenter(session, next);
+				console.log(`Joining as a Presenter(${session.spredCast.id}) => ${session.id}`);
+				return initializePresenter(kurentoClient, session, next);
 			} else {
 				if (session.spredCast.isLive) {
 					return initializeViewer(session, next);
@@ -133,6 +135,7 @@ function onAuthAnswer(session, spredcasts, auth_answer) {
 				message: err
 			});
 		} else {
+			console.log(`Sending auth_answer for ${session.user.pseudo}`);
 			session.socket.emit('auth_answer', {
 				status: 'accepted',
 				sdpAnswer: session.sdpAnswer
@@ -141,17 +144,26 @@ function onAuthAnswer(session, spredcasts, auth_answer) {
 	});
 }
 
-function initializePresenter(session, next) {
+function initializePresenter(kurentoClient, session, next) {
 	async.waterfall([
-		(next) => KurentoUtils.createPresenter(this.kurentoClient, session, next),
+		(next) => KurentoUtils.createPresenter(kurentoClient, session, next),
 		(next) => {
-			session.spredcast.removeFromPendingQueue(session);
-			session.spredcast.presenter = session;
-			session.spredcast.isLive = true;
-			async.eachLimit(session.spredcast.session_pending, 100, (session, next) => initializeViewer(session, next));
-			console.info(`User ${session.user.pseudo} added as presenter in spredcast ${session.spredcast.id}`);
-			console.info(`${session.spredcast.user_pending.length} viewer(s) were waiting in the room.`);
-			return next(null, session.sdpAnswer);
+			session.spredCast.removeFromPendingQueue(session);
+			session.spredCast.presenter = session;
+			// Mettre à jour le state du cast (1 quand le presenter à join, 2 quand c'est terminé)
+			common.spredCastModel.updateState(session.spredCast.id, 1, function(err) {
+				if (err) {
+					console.log(`Error while trying to update spredCast status : `, err);
+				} else {
+					console.log(`spredCast(${session.spredCast.id}) has now a presenter live`);
+					session.spredCast.isLive = true;
+					async.eachLimit(session.spredCast.session_pending, 100, (session, next) => initializeViewer(session, next));
+					console.info(`User ${session.user.pseudo} added as presenter in spredcast ${session.spredCast.id}`);
+					console.info(`${session.spredCast.session_pending.length} viewer(s) were waiting in the room.`);
+					return next(null, session.sdpAnswer);
+				}
+			});
+
 		}
 	], next);
 }
@@ -160,10 +172,11 @@ function initializeViewer(session, next) {
 	async.waterfall([
 		(next) => KurentoUtils.createViewer(session, next),
 		(next) => {
-			session.room.removeFromQueue(session);
-			session.room.addViewer(session);
-			console.info(`User ${session.user.pseudo} added as viewer in room ${session.spredcast.id}`);
-			console.info(`${session.spredcast.viewers.length - 1} viewer(s) were already in the room.`);
+			session.spredCast.removeFromPendingQueue(session);
+			session.spredCast.addViewer(session);
+			console.info(`User ${session.user.pseudo} added as viewer in room ${session.spredCast.id}`);
+			console.info(`${session.spredCast.viewers.length - 1} viewer(s) were already in the room.`);
+			return next();
 		}
 	], next);
 }

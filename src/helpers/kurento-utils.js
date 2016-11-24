@@ -14,7 +14,7 @@ KurentoUtils.prototype.createPresenter = function(kurentoClient, session, next) 
 					session.close();
 					return next(error);
 				}
-				console.log(`MediaPipeline for presenter ${session.id} in spredcast ${session.spredcast.id} created`);
+				console.log(`MediaPipeline for presenter ${session.id} in spredCast ${session.spredCast.id} created`);
 				session.pipeline = pipeline;
 				return next();
 			});
@@ -25,16 +25,16 @@ KurentoUtils.prototype.createPresenter = function(kurentoClient, session, next) 
 					session.close();
 					return next(error);
 				}
-				console.log(`WebRtcEndPoint for presenter ${session.id} in spredcast ${session.spredcast.id} created`);
+				console.log(`WebRtcEndPoint for presenter ${session.id} in spredCast ${session.spredCast.id} created`);
 				session.webRtcEndpoint = webRtcEndpoint;
 				return next();
 			});
 		},
 		(next) => {
 			this.runSavedIceCandidate(session);
-			session.uwebRtcEndpoint.on('OnIceCandidate', function(event) {
+			session.webRtcEndpoint.on('OnIceCandidate', function(event) {
 				var candidate = kurento.getComplexType('IceCandidate')(event.candidate);
-				console.log(`Sending candidate for presenter ${session.user.pseudo} in spredcast ${session.spredcast.id}`);
+				console.log(`Sending candidate for presenter ${session.user.pseudo} in spredCast ${session.spredCast.id}`);
 				session.socket.emit('ice_candidate', {
 					candidate: candidate
 				});
@@ -47,7 +47,7 @@ KurentoUtils.prototype.createPresenter = function(kurentoClient, session, next) 
 					session.close();
 					return next(error);
 				}
-				console.log(`sdpOffer have been process without errors for presenter ${session.user.pseudo} in spredcast ${session.spredcast.id}`);
+				console.log(`sdpOffer have been process without errors for presenter ${session.user.pseudo} in spredCast ${session.spredCast.id}`);
 				session.sdpAnswer = sdpAnswer;
 				return next();
 			});
@@ -58,7 +58,7 @@ KurentoUtils.prototype.createPresenter = function(kurentoClient, session, next) 
 					session.close();
 					return next(error);
 				}
-				console.log(`Candidates have been gathered for presenter ${session.user.pseudo} in spredcast ${session.spredcast.id}`);
+				console.log(`Candidates have been gathered for presenter ${session.user.pseudo} in spredCast ${session.spredCast.id}`);
 				return next();
 			});
 		}
@@ -68,12 +68,12 @@ KurentoUtils.prototype.createPresenter = function(kurentoClient, session, next) 
 KurentoUtils.prototype.createViewer = function(session, next) {
 	async.waterfall([
 		(next) => {
-			session.spredcast.presenter.pipeline.create('WebRtcEndpoint', function(error, webRtcEndpoint) {
+			session.spredCast.presenter.pipeline.create('WebRtcEndpoint', function(error, webRtcEndpoint) {
 				if (error) {
 					session.close();
 					return next(error);
 				}
-				console.log(`WebRtcEndPoint for viewer ${session.user.pseudo} in spredcast ${session.spredcast.id} created`);
+				console.log(`WebRtcEndPoint for viewer ${session.user.pseudo} in spredCast ${session.spredCast.id} created`);
 				session.webRtcEndpoint = webRtcEndpoint;
 				return next();
 			});
@@ -82,7 +82,7 @@ KurentoUtils.prototype.createViewer = function(session, next) {
 			this.runSavedIceCandidate(session);
 			session.webRtcEndpoint.on('OnIceCandidate', function(event) {
 				var candidate = kurento.getComplexType('IceCandidate')(event.candidate);
-				console.log(`Sending candidate for viever ${session.user.pseudo} in spredcast ${session.spredcast.id}`);
+				console.log(`Sending candidate for viever ${session.user.pseudo} in spredCast ${session.spredCast.id}`);
 				session.socket.emit('ice_candidate', {
 					candidate: candidate
 				});
@@ -95,28 +95,28 @@ KurentoUtils.prototype.createViewer = function(session, next) {
 					session.close();
 					return next(error);
 				}
-				console.log(`sdpOffer has been process without errors for viewer ${session.user.pseudo} in spredcast ${session.spredcast.id}`);
+				console.log(`sdpOffer has been process without errors for viewer ${session.user.pseudo} in spredCast ${session.spredCast.id}`);
 				session.sdpAnswer = sdpAnswer;
 				return next();
 			});
 		},
 		(next) => {
-			session.spredcast.presenter.webRtcEndpoint.connect(session.user.webRtcEndpoint, function(error) {
+			session.spredCast.presenter.webRtcEndpoint.connect(session.webRtcEndpoint, function(error) {
 				if (error) {
-					session.user.stop();
+					session.close();
 					return next(error);
 				}
-				console.log(`Viewer ${session.user.pseudo} in spredcast ${session.spredcast.id} has been connected without errors to presenter ${session.spredcast.presenter.user.pseudo} in spredcast ${session.spredcast.id}`);
+				console.log(`Viewer ${session.user.pseudo} in spredCast ${session.spredCast.id} has been connected without errors to presenter ${session.spredCast.presenter.user.pseudo} in spredCast ${session.spredCast.id}`);
 				return next();
 			});
 		},
 		(next) => {
-			session.user.webRtcEndpoint.gatherCandidates(function(error) {
+			session.webRtcEndpoint.gatherCandidates(function(error) {
 				if (error) {
-					session.user.stop();
+					session.close();
 					return next(error);
 				}
-				console.log(`Candidates have been gathered for viewer ${session.user.pseudo} in spredcast ${session.spredcast.id}`);
+				console.log(`Candidates have been gathered for viewer ${session.user.pseudo} in spredCast ${session.spredCast.id}`);
 				return next();
 			});
 		}
