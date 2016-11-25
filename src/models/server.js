@@ -16,7 +16,7 @@ const User = require('./user');
 
 var Server = function(options) {
 	this.conf = {
-		as_uri: options && options.as_uri ? options.as_uri : 'https://52.212.178.211:443/',
+		as_uri: options && options.as_uri ? options.as_uri : 'https://52.212.178.211:8443/',
 		kms_uri: options && options.kms_uri ? options.kms_uri : 'ws://ec2-52-212-178-211.eu-west-1.compute.amazonaws.com:8888/kurento'
 	};
 
@@ -54,6 +54,10 @@ Server.prototype.start = function() {
 	httpsServer.listen(port, function() {
 		console.log('Kurento Tutorial started');
 		console.log(`Open ${url.format(asUrl)} with a WebRTC capable browser`);
+	});
+
+	wss.on('error', function(err) {
+		console.error(`Got error on socket.io init : `, err);
 	});
 
 	wss.on('connection', function(socket) {
