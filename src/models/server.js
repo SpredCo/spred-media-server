@@ -22,7 +22,9 @@ var Server = function(options) {
 
 	this.options = {
 		key: fs.readFileSync('keys/server.key'),
-		cert: fs.readFileSync('keys/server.crt')
+		cert: fs.readFileSync('keys/server.crt'),
+		requestCert: true,
+		rejectUnauthorized: false
 	};
 
 	console.log("Connecting server to Kurento Media Server...");
