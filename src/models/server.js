@@ -16,13 +16,13 @@ const User = require('./user');
 
 var Server = function(options) {
 	this.conf = {
-		as_uri: options && options.as_uri ? options.as_uri : 'https://52.212.178.211:8443/',
+		as_uri: options && options.as_uri ? options.as_uri : 'https://52.212.178.211:443/',
 		kms_uri: options && options.kms_uri ? options.kms_uri : 'ws://ec2-52-212-178-211.eu-west-1.compute.amazonaws.com:8888/kurento'
 	};
 
 	this.options = {
-		key: fs.readFileSync('keys/server.key'),
-		cert: fs.readFileSync('keys/server.crt'),
+		key: fs.readFileSync('keys/file.pem'),
+		cert: fs.readFileSync('keys/file.crt'),
 		requestCert: true,
 		rejectUnauthorized: false
 	};
