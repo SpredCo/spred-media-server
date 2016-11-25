@@ -42,10 +42,9 @@ var Server = function(options) {
 };
 
 Server.prototype.start = function() {
-	var app = express();
 	var asUrl = url.parse(this.conf.as_uri);
 	var port = asUrl.port;
-	var httpsServer = https.createServer(this.options, app);
+	var httpsServer = https.createServer(this.options);
 	var wss = new io(httpsServer);
 
 	// TODO: SPREDCASTS IN THE SERVER -> Need to get them from DB with Spred is ready
