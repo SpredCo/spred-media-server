@@ -1,6 +1,6 @@
 const fs = require('fs');
 const async = require('async');
-const https = require('https');
+const http = require('http');
 const express = require('express');
 const url = require('url');
 const io = require('socket.io');
@@ -21,8 +21,8 @@ var Server = function(options) {
 	};
 
 	this.options = {
-		key: fs.readFileSync('keys/server.key'),
-		cert: fs.readFileSync('keys/server.crt')
+		// key: fs.readFileSync('keys/server.key'),
+		// cert: fs.readFileSync('keys/server.crt')
 	};
 
 	console.log("Connecting server to Kurento Media Server...");
@@ -43,7 +43,7 @@ Server.prototype.start = function() {
 	var app = express();
 	var asUrl = url.parse(this.conf.as_uri);
 	var port = asUrl.port;
-	var httpsServer = https.createServer(this.options, app);
+	var httpsServer = http.createServer(this.options, app);
 	var wss = new io(httpsServer);
 
 	// TODO: SPREDCASTS IN THE SERVER -> Need to get them from DB with Spred is ready
