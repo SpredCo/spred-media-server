@@ -16,7 +16,7 @@ const User = require('./user');
 
 var Server = function(options) {
 	this.conf = {
-		as_uri: options && options.as_uri ? options.as_uri : 'https://localhost:8443/',
+		as_uri: options && options.as_uri ? options.as_uri : 'https://52.212.178.211:8443/',
 		kms_uri: options && options.kms_uri ? options.kms_uri : 'ws://ec2-52-212-178-211.eu-west-1.compute.amazonaws.com:8888/kurento'
 	};
 
@@ -57,8 +57,8 @@ Server.prototype.start = function() {
 	wss.on('error', function(err) {
 		console.error(`Got error on socket.io init : `, err);
 	});
-        wss.on('connection', function(socket) {
-	    console.log('connection received');
+	wss.on('connection', function(socket) {
+		console.log('connection received');
 		const session = new Session(socket);
 		const kurentoClient = this.kurentoClient;
 
