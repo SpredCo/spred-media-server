@@ -12,6 +12,9 @@ var Session = function(socket) {
 	// We store every iceCandidate for later use
 	this.savedIceCandidate = [];
 
+	// Chat linked to the user
+	this.chat = null;
+
 	this.pipeline = null;
 	this.webRtcEndpoint = null;
 	this.sdpAnswer = null;

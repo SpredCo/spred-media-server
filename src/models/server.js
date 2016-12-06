@@ -13,6 +13,7 @@ const KurentoUtils = require('../helpers/kurento-utils');
 const Spredcast = require('./spredcast');
 const Session = require('./session');
 const User = require('./user');
+const Chat = require('./chat');
 
 var Server = function(options) {
 	this.conf = {
@@ -75,6 +76,18 @@ Server.prototype.start = function() {
 		session.socket.on('auth_answer', function(auth_answer) {
 			onAuthAnswer(kurentoClient, session, spredcasts, auth_answer);
 		});
+
+		session.socket.on('questions', function(question) {
+			session.socket.to(session.spredCast.id).emit('questions', question);
+		}.bind(this));
+
+		session.socket.on('down_question', function(question) {
+			session.socket.to(session.spredCast.id).emit('down_question', question);
+		}.bind(this));
+
+		session.socket.on('up_question', function(question) {
+			session.socket.to(session.spredCast.id).emit('up_question', question);
+		}.bind(this));
 	}.bind(this));
 };
 
@@ -118,6 +131,7 @@ function onAuthAnswer(kurentoClient, session, spredcasts, auth_answer) {
 			} else {
 				console.info(`${session.castToken.pseudo} is joining the spredcast(${session.castToken.cast.id}) with already ${session.spredCast.viewers.length} viewer(s)`);
 			}
+			session.chat = new Chat(session);
 			session.socket.join(session.castToken.cast.id);
 			if (fToken.presenter) {
 				console.log(`Joining as a Presenter(${session.spredCast.id}) => ${session.id}`);
