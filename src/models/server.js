@@ -76,18 +76,6 @@ Server.prototype.start = function() {
 		session.socket.on('auth_answer', function(auth_answer) {
 			onAuthAnswer(kurentoClient, session, spredcasts, auth_answer);
 		});
-
-		session.socket.on('questions', function(question) {
-			session.socket.to(session.spredCast.id).emit('questions', question);
-		}.bind(this));
-
-		session.socket.on('down_question', function(question) {
-			session.socket.to(session.spredCast.id).emit('down_question', question);
-		}.bind(this));
-
-		session.socket.on('up_question', function(question) {
-			session.socket.to(session.spredCast.id).emit('up_question', question);
-		}.bind(this));
 	}.bind(this));
 };
 
