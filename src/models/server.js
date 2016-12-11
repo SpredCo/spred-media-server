@@ -16,7 +16,7 @@ const User = require('./user');
 
 var Server = function(options) {
 	this.conf = {
-		as_uri: options && options.as_uri ? options.as_uri : 'https://52.212.178.211:8443/',
+		as_uri: options && options.as_uri ? options.as_uri : `https://0.0.0.0:${process.env.PORT}`,
 		kms_uri: options && options.kms_uri ? options.kms_uri : 'ws://ec2-52-212-178-211.eu-west-1.compute.amazonaws.com:8888/kurento'
 	};
 
