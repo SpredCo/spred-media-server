@@ -1,3 +1,5 @@
+const Chat = require('./chat');
+
 var Session = function(socket) {
 	this.id = socket.id;
 	this.socket = socket;
@@ -36,6 +38,18 @@ Session.prototype.close = function() {
 		this.webRtcEndpoint.release();
 	}
 	console.info(`Session[${this.id}] with user[${this.user ? this.user.pseudo : 'anonymous'}] now close.`);
+}
+
+Session.prototype.enableChat = function() {
+	if (!this.chat) {
+		this.chat = new Chat(this);
+	}
+}
+
+Session.prototype.disableChat = function() {
+	if (this.chat) {
+		this.chat = null;
+	}
 }
 
 module.exports = Session;

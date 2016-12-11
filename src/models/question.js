@@ -1,20 +1,12 @@
-var Question = function(text) {
-	this.text = text;
+var Question = function(id) {
+	this.id = id;
+	this.text = null;
 	this.sender = null;
 	this.upVote = 0;
 	this.downVote = 0;
+	this.date = new Date();
 
 	return this;
-}
-
-Question.prototype.up = function() {
-	this.upVote += 1;
-	return this.upVote;
-}
-
-Question.prototype.down = function() {
-	this.downVote += 1;
-	return this.downVote;
 }
 
 module.exports = Question;

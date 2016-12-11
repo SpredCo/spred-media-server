@@ -5,6 +5,8 @@ var Spredcast = function(id) {
 	this.presenter = null;
 	this.session_pending = [];
 	this.viewers = [];
+	this.messages = [];
+	this.questions = [];
 
 	return this;
 }
