@@ -22,10 +22,12 @@ var Chat = function(session) {
 
 	this.session.socket.on('down_question', function(question) {
 		this.session.socket.to(this.session.spredCast.id).emit('down_question', question);
+		this.session.socket.emit('down_question', question);
 	}.bind(this));
 
 	this.session.socket.on('up_question', function(question) {
 		this.session.socket.to(this.session.spredCast.id).emit('up_question', question);
+		this.session.socket.emit('up_question', question);
 	}.bind(this));
 
 	return this;
