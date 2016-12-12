@@ -45,14 +45,11 @@ var Server = function(options) {
 Server.prototype.start = function() {
 	var asUrl = url.parse(this.conf.as_uri);
 	var port = asUrl.port;
-	var httpsServer = https.createServer(this.options, (req, res) => {
-		res.setHeader('Access-Control-Allow-Origin', '*');
-		res.setHeader('Access-Control-Request-Method', '*');
-		res.setHeader('Access-Control-Allow-Methods', 'OPTIONS, GET');
-		res.setHeader('Access-Control-Allow-Headers', '*');
-	});
+	var httpsServer = https.createServer(this.options);
 
-	var wss = new io(httpsServer);
+	var wss = new io(httpsServer, {
+		origins: '*:*'
+	});
 
 	// TODO: SPREDCASTS IN THE SERVER -> Need to get them from DB with Spred is ready
 	const spredcasts = [];
