@@ -45,20 +45,20 @@ var Server = function(options) {
 Server.prototype.start = function() {
 	var asUrl = url.parse(this.conf.as_uri);
 	var port = asUrl.port;
-	var httpsServer = https.createServer(this.options);
+	// var httpsServer = https.createServer(this.options);
 
-	var wss = new io(httpsServer, {
-		origins: '*:*'
+	const server = express().listen(port, function() {
+		console.log(`Open ${url.format(asUrl)} with a WebRTC capable browser`);
 	});
 
-	wss.set('transports', ['websocket']);
+	var wss = new io(server);
 
 	// TODO: SPREDCASTS IN THE SERVER -> Need to get them from DB with Spred is ready
 	const spredcasts = [];
 
-	httpsServer.listen(port, function() {
-		console.log(`Open ${url.format(asUrl)} with a WebRTC capable browser`);
-	});
+	// httpsServer.listen(port, function() {
+	// 	console.log(`Open ${url.format(asUrl)} with a WebRTC capable browser`);
+	// });
 
 	wss.on('error', function(err) {
 		console.error(`Got error on socket.io init : `, err);
