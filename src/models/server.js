@@ -15,9 +15,9 @@ const Session = require('./session');
 const User = require('./user');
 
 var Server = function(options) {
-	const EXPRESS_PORT = process.env.PORT || 6666;
+	const PORT = process.env.PORT || 8443;
 	this.conf = {
-		as_uri: options && options.as_uri ? options.as_uri : `https://0.0.0.0:${EXPRESS_PORT}`,
+		as_uri: options && options.as_uri ? options.as_uri : `https://0.0.0.0:${PORT}`,
 		kms_uri: options && options.kms_uri ? options.kms_uri : 'ws://ec2-52-212-178-211.eu-west-1.compute.amazonaws.com:8888/kurento'
 	};
 
@@ -46,7 +46,7 @@ Server.prototype.start = function() {
 	var asUrl = url.parse(this.conf.as_uri);
 	var port = asUrl.port;
 	var httpsServer = https.createServer(this.options);
-	var wss = new io(process.env.WSS_URL || 8443, httpsServer);
+	var wss = new io(httpsServer);
 
 	// TODO: SPREDCASTS IN THE SERVER -> Need to get them from DB with Spred is ready
 	const spredcasts = [];
