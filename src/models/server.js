@@ -51,6 +51,8 @@ Server.prototype.start = function() {
 		origins: '*:*'
 	});
 
+	wss.set('transports', ['websocket']);
+
 	// TODO: SPREDCASTS IN THE SERVER -> Need to get them from DB with Spred is ready
 	const spredcasts = [];
 
