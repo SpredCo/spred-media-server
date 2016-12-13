@@ -1,7 +1,6 @@
 const fs = require('fs');
 const async = require('async');
 const https = require('https');
-const express = require('express');
 const url = require('url');
 const io = require('socket.io');
 const _ = require('lodash');
@@ -45,20 +44,15 @@ var Server = function(options) {
 Server.prototype.start = function() {
 	var asUrl = url.parse(this.conf.as_uri);
 	var port = asUrl.port;
-	// var httpsServer = https.createServer(this.options);
-
-	const server = express().listen(port, function() {
-		console.log(`Open ${url.format(asUrl)} with a WebRTC capable browser`);
-	});
-
-	var wss = new io(server);
+	var httpsServer = https.createServer(this.options);
+	var wss = new io(httpsServer);
 
 	// TODO: SPREDCASTS IN THE SERVER -> Need to get them from DB with Spred is ready
 	const spredcasts = [];
 
-	// httpsServer.listen(port, function() {
-	// 	console.log(`Open ${url.format(asUrl)} with a WebRTC capable browser`);
-	// });
+	httpsServer.listen(port, function() {
+		console.log(`Open ${url.format(asUrl)} with a WebRTC capable browser`);
+	});
 
 	wss.on('error', function(err) {
 		console.error(`Got error on socket.io init : `, err);
@@ -110,6 +104,7 @@ function onAuthAnswer(kurentoClient, session, spredcasts, auth_answer) {
 				});
 			}
 			session.user = new User(fToken.user, fToken.pseudo);
+			session.user.picture = fToken.user.pictureUrl;
 			session.sdpOffer = auth_answer.sdpOffer;
 
 			session.castToken = fToken;

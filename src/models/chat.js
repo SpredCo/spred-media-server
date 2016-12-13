@@ -35,6 +35,7 @@ var Chat = function(session) {
 
 Chat.prototype.sendQuestion = function(question) {
 	question.sender = this.session.user.pseudo;
+	question.user_picture = this.session.user.picture;
 	console.log(`sending question to ${this.session.spredCast.id} with content : ${question.text}`)
 	this.session.socket.to(this.session.spredCast.id).emit('questions', question);
 	this.session.socket.emit('questions', question);
