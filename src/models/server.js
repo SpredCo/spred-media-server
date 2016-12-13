@@ -144,7 +144,8 @@ function onAuthAnswer(kurentoClient, session, spredcasts, auth_answer) {
 			console.log(`Sending auth_answer for ${session.user.pseudo}`);
 			session.socket.emit('auth_answer', {
 				status: 'accepted',
-				sdpAnswer: session.sdpAnswer
+				sdpAnswer: session.sdpAnswer,
+				user: session.user.pseudo
 			});
 		}
 	});
