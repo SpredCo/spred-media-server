@@ -129,11 +129,11 @@ function onAuthAnswer(kurentoClient, session, spredcasts, auth_answer) {
 					return initializeViewer(session, next);
 				} else {
 					session.spredCast.addToPendingQueue(session);
-					return next("Presenter is not live yet.");
+					return next(null, "Presenter is not live yet.");
 				}
 			}
 		}
-	], function(err) {
+	], function(err, res) {
 		if (err) {
 			console.error(`Got error when trying to get Spredcast for ${session.id} : `, err);
 			session.socket.emit('auth_answer', {
@@ -142,11 +142,13 @@ function onAuthAnswer(kurentoClient, session, spredcasts, auth_answer) {
 			});
 		} else {
 			console.log(`Sending auth_answer for ${session.user.pseudo}`);
-			session.socket.emit('auth_answer', {
+			var payload = {
 				status: 'accepted',
 				sdpAnswer: session.sdpAnswer,
 				user: session.user.pseudo
-			});
+			};
+			if (res) payload.message = res;
+			session.socket.emit('auth_answer', payload);
 		}
 	});
 }
@@ -164,7 +166,22 @@ function initializePresenter(kurentoClient, session, next) {
 				} else {
 					console.log(`spredCast(${session.spredCast.id}) has now a presenter live`);
 					session.spredCast.isLive = true;
-					async.eachLimit(session.spredCast.session_pending, 100, (session, next) => initializeViewer(session, next));
+					async.eachLimit(session.spredCast.session_pending, 100, (session, next) => initializeViewer(session, function(err) {
+						if (err) {
+							console.error(`Got error when trying to get Spredcast for ${session.id} : `, err);
+							session.socket.emit('auth_answer', {
+								status: 'rejected',
+								message: err
+							});
+						} else {
+							console.log(`Sending auth_answer for ${session.user.pseudo}`);
+							session.socket.emit('auth_answer', {
+								status: 'accepted',
+								sdpAnswer: session.sdpAnswer,
+								user: session.user.pseudo
+							});
+						}
+					}));
 					console.info(`User ${session.user.pseudo} added as presenter in spredcast ${session.spredCast.id}`);
 					console.info(`${session.spredCast.session_pending.length} viewer(s) were waiting in the room.`);
 					return next(null, session.sdpAnswer);
