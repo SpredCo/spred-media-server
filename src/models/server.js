@@ -1,6 +1,6 @@
 const fs = require('fs');
 const async = require('async');
-const https = require('https');
+const http = require('http');
 const url = require('url');
 const io = require('socket.io');
 const _ = require('lodash');
@@ -16,7 +16,7 @@ const User = require('./user');
 var Server = function(options) {
 	const PORT = process.env.PORT || 8443;
 	this.conf = {
-		as_uri: options && options.as_uri ? options.as_uri : `https://0.0.0.0:${PORT}`,
+		as_uri: options && options.as_uri ? options.as_uri : `http://0.0.0.0:${PORT}`,
 		kms_uri: options && options.kms_uri ? options.kms_uri : 'ws://ec2-52-212-178-211.eu-west-1.compute.amazonaws.com:8888/kurento'
 	};
 
@@ -44,7 +44,7 @@ var Server = function(options) {
 Server.prototype.start = function() {
 	var asUrl = url.parse(this.conf.as_uri);
 	var port = asUrl.port;
-	var httpsServer = https.createServer(this.options);
+	var httpsServer = http.createServer();
 	var wss = new io(httpsServer);
 
 	// TODO: SPREDCASTS IN THE SERVER -> Need to get them from DB with Spred is ready
