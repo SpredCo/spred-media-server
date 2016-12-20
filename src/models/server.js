@@ -104,7 +104,7 @@ function onAuthAnswer(kurentoClient, session, spredcasts, auth_answer) {
 				});
 			}
 			session.user = new User(fToken.user, fToken.pseudo);
-			session.user.picture = fToken.user.pictureUrl;
+			session.user.picture = fToken.user ? fToken.user.pictureUrl : "/img/profile.jpg";
 			session.sdpOffer = auth_answer.sdpOffer;
 
 			session.castToken = fToken;
