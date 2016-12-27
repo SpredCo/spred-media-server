@@ -1,6 +1,6 @@
 const fs = require('fs');
 const async = require('async');
-const http = require('http');
+const https = require('https');
 const url = require('url');
 const io = require('socket.io');
 const _ = require('lodash');
@@ -16,7 +16,7 @@ const User = require('./user');
 var Server = function(options) {
 	const PORT = process.env.PORT || 8443;
 	this.conf = {
-		as_uri: options && options.as_uri ? options.as_uri : `http://0.0.0.0:${PORT}`,
+		as_uri: options && options.as_uri ? options.as_uri : `https://0.0.0.0:${PORT}`,
 		kms_uri: options && options.kms_uri ? options.kms_uri : 'ws://ec2-52-212-178-211.eu-west-1.compute.amazonaws.com:8888/kurento'
 	};
 
@@ -44,7 +44,7 @@ var Server = function(options) {
 Server.prototype.start = function() {
 	var asUrl = url.parse(this.conf.as_uri);
 	var port = asUrl.port;
-	var httpsServer = http.createServer();
+	var httpsServer = https.createServer(this.options);
 	var wss = new io(httpsServer);
 
 	// TODO: SPREDCASTS IN THE SERVER -> Need to get them from DB with Spred is ready
@@ -85,12 +85,37 @@ function requestIdentity(session) {
 
 function endSession(session) {
 	if (session && session.id) {
-		console.info(`Connection with ${session.id} lost.`)
-		session.close();
+		console.info(`Connection with ${session.id} lost.`);
+		if (session.spredCast) {
+			async.parallel([
+				(next) => common.spredCastModel.updateUserCount(session.spredCast.id, (session.spredCast.viewers.length + !!session.spredCast.presenter) - 1, (err) => {
+					if (err) {
+						return next(err);
+					}
+					console.info(`Leaving cast ${session.spredCast.id}. ${session.spredCast.viewers.length - 1} viewer(s) remaining.`);
+					return next();
+				}),
+				(next) => {
+					if (session.spredCast.presenter.id !== session.id) return next();
+					common.spredCastModel.updateState(session.spredCast.id, 0, (err) => {
+						if (err) {
+							return next(err);
+						}
+						console.log(`Presenter(${session.id}) has left the spredCast(${session.spredCast.id}).`);
+						return next();
+					});
+				}
+			], (err) => {
+				if (err) {
+					console.error(`Got error while disconnecting for ID(${session.id}) : `, err);
+				}
+				session.close();
+				session = null;
+			});
+		}
 	} else {
 		console.log(`Anonymous connection closed`);
 	}
-	session = null;
 }
 
 function onAuthAnswer(kurentoClient, session, spredcasts, auth_answer) {
@@ -182,6 +207,7 @@ function initializePresenter(kurentoClient, session, next) {
 							});
 						}
 					}));
+					common.spredCastModel.updateUserCount(session.spredCast.id, 1);
 					console.info(`User ${session.user.pseudo} added as presenter in spredcast ${session.spredCast.id}`);
 					console.info(`${session.spredCast.session_pending.length} viewer(s) were waiting in the room.`);
 					return next(null, session.sdpAnswer);
@@ -198,6 +224,7 @@ function initializeViewer(session, next) {
 		(next) => {
 			session.spredCast.removeFromPendingQueue(session);
 			session.spredCast.addViewer(session);
+			common.spredCastModel.updateUserCount(session.spredCast.id, (session.spredCast.viewers + !!session.spredCast.presenter));
 			console.info(`User ${session.user.pseudo} added as viewer in room ${session.spredCast.id}`);
 			console.info(`${session.spredCast.viewers.length - 1} viewer(s) were already in the room.`);
 			return next();

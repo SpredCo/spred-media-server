@@ -1,4 +1,5 @@
 const Chat = require('./chat');
+const _ = require('lodash');
 
 var Session = function(socket) {
 	this.id = socket.id;
@@ -36,6 +37,13 @@ Session.prototype.close = function() {
 		this.pipeline.release();
 	} else if (this.webRtcEndpoint) {
 		this.webRtcEndpoint.release();
+	}
+	if (this.spredCast) {
+		if (this.spredCast.presenter.id === this.id) {
+			this.spredCast.presenter = null;
+		} else {
+			_.remove(this.spredCast.viewers, (viewer) => viewer.id === this.id);
+		}
 	}
 	console.info(`Session[${this.id}] with user[${this.user ? this.user.pseudo : 'anonymous'}] now close.`);
 }
