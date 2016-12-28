@@ -14,10 +14,10 @@ const Session = require('./session');
 const User = require('./user');
 
 var Server = function(options) {
-	const PORT = process.env.PORT || 8443;
+	const PORT = process.env.PORT || 3030;
 	this.conf = {
-		as_uri: options && options.as_uri ? options.as_uri : `https://0.0.0.0:${PORT}`,
-		kms_uri: options && options.kms_uri ? options.kms_uri : 'ws://ec2-52-212-178-211.eu-west-1.compute.amazonaws.com:8888/kurento'
+		as_uri: options && options.as_uri ? options.as_uri : `http://0.0.0.0:${PORT}`,
+		kms_uri: options && options.kms_uri ? options.kms_uri : 'ws://localhost:8888/kurento'
 	};
 
 	this.options = {
