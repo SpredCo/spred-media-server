@@ -1,3 +1,5 @@
+const _ = require('lodash');
+
 const Message = require('./message');
 const Question = require('./question');
 
@@ -21,14 +23,20 @@ var Chat = function(session) {
 	}.bind(this));
 
 	this.session.socket.on('down_question', function(question) {
-		this.session.socket.to(this.session.spredCast.id).emit('down_question', question);
-		this.session.socket.emit('down_question', question);
+		const q = _.find(this.session.spredCast.questions, (q) => question.id === q.id);
+		q.nbVote -= 1;
+		this.session.socket.to(this.session.spredCast.id).emit('down_question', q);
+		this.session.socket.emit('down_question', q);
 	}.bind(this));
 
 	this.session.socket.on('up_question', function(question) {
-		this.session.socket.to(this.session.spredCast.id).emit('up_question', question);
-		this.session.socket.emit('up_question', question);
+		const q = _.find(this.session.spredCast.questions, (q) => question.id === q.id);
+		q.nbVote += 1;
+		this.session.socket.to(this.session.spredCast.id).emit('up_question', q);
+		this.session.socket.emit('up_question', q);
 	}.bind(this));
+
+	sendSpredCastHistory(session);
 
 	return this;
 }
@@ -46,6 +54,15 @@ Chat.prototype.sendMessage = function(message) {
 	console.log(`sending message to ${this.session.spredCast.id} with content : ${message.text}`)
 	this.session.socket.to(this.session.spredCast.id).emit('messages', message);
 	this.session.socket.emit('messages', message);
+}
+
+function sendSpredCastHistory(session) {
+	_.forEach(session.spredCast.messages, (message) => {
+		session.socket.emit('messages', message);
+	});
+	_.forEach(session.spredCast.questions, (question) => {
+		session.socket.emit('questions', question);
+	});
 }
 
 module.exports = Chat;
