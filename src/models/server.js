@@ -96,7 +96,7 @@ function endSession(session) {
 					return next();
 				}),
 				(next) => {
-					if (session.spredCast.presenter.id !== session.id) return next();
+					if (!session.spredCast || !session.spredCast.presenter || session.spredCast.presenter.id !== session.id) return next();
 					common.spredCastModel.updateState(session.spredCast.id, 0, (err) => {
 						if (err) {
 							return next(err);

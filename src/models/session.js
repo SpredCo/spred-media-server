@@ -39,7 +39,7 @@ Session.prototype.close = function() {
 		this.webRtcEndpoint.release();
 	}
 	if (this.spredCast) {
-		if (this.spredCast.presenter.id === this.id) {
+		if (this.spredCast.presenter && this.spredCast.presenter.id === this.id) {
 			this.spredCast.presenter = null;
 		} else {
 			_.remove(this.spredCast.viewers, (viewer) => viewer.id === this.id);
