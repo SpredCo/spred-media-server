@@ -198,22 +198,29 @@ function initializePresenter(kurentoClient, session, next) {
 				} else {
 					console.log(`spredCast(${session.spredCast.id}) has now a presenter live`);
 					session.spredCast.isLive = true;
-					async.eachLimit(session.spredCast.session_pending, 100, (session, next) => initializeViewer(session, function(err) {
-						if (err) {
-							console.error(`Got error when trying to get Spredcast for ${session.id} : `, err);
-							session.socket.emit('auth_answer', {
-								status: 'rejected',
-								message: err
+					async.eachLimit(session.spredCast.session_pending, 100, (session, next) => {
+						if (session.sdpOffer) {
+							initializeViewer(session, function(err) {
+								if (err) {
+									console.error(`Got error when trying to get Spredcast for ${session.id} : `, err);
+									session.socket.emit('auth_answer', {
+										status: 'rejected',
+										message: err
+									});
+								} else {
+									console.log(`Sending auth_answer for ${session.user.pseudo}`);
+									session.socket.emit('auth_answer', {
+										status: 'accepted',
+										sdpAnswer: session.sdpAnswer,
+										user: session.user.pseudo
+									});
+								}
+								return next();
 							});
 						} else {
-							console.log(`Sending auth_answer for ${session.user.pseudo}`);
-							session.socket.emit('auth_answer', {
-								status: 'accepted',
-								sdpAnswer: session.sdpAnswer,
-								user: session.user.pseudo
-							});
+							return next();
 						}
-					}));
+					});
 					common.spredCastModel.updateUserCount(session.spredCast.id, 1);
 					console.info(`User ${session.user.pseudo} added as presenter in spredcast ${session.spredCast.id}`);
 					console.info(`${session.spredCast.session_pending.length} viewer(s) were waiting in the room.`);
