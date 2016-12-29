@@ -47,7 +47,7 @@ Server.prototype.start = function() {
 	var httpsServer = https.createServer(this.options);
 	var wss = new io(httpsServer);
 
-	wss.set('origins', ['*:*']);
+	wss.set('origins', ['web-app.herokuapp.com']);
 	// TODO: SPREDCASTS IN THE SERVER -> Need to get them from DB with Spred is ready
 	const spredcasts = [];
 
