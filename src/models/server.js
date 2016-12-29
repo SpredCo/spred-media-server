@@ -44,7 +44,13 @@ var Server = function(options) {
 Server.prototype.start = function() {
 	var asUrl = url.parse(this.conf.as_uri);
 	var port = asUrl.port;
-	var httpsServer = http.createServer();
+	var httpsServer = http.createServer(function(res, res) {
+		// Set CORS headers
+		res.setHeader('Access-Control-Allow-Origin', '*');
+		res.setHeader('Access-Control-Request-Method', '*');
+		res.setHeader('Access-Control-Allow-Methods', 'OPTIONS, GET');
+		// res.setHeader('Access-Control-Allow-Headers', '*');
+	});
 	var wss = new io(httpsServer);
 
 	// wss.set('origins', '*:*');
