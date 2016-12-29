@@ -24,16 +24,30 @@ var Chat = function(session) {
 
 	this.session.socket.on('down_question', function(question) {
 		const q = _.find(this.session.spredCast.questions, (q) => question.id === q.id);
-		q.nbVote -= 1;
-		this.session.socket.to(this.session.spredCast.id).emit('down_question', q);
-		this.session.socket.emit('down_question', q);
+		if (q) {
+			q.nbVote -= 1;
+			this.session.socket.to(this.session.spredCast.id).emit('down_question', q);
+			this.session.socket.emit('down_question', q);
+		} else {
+			this.session.socket.emit('down_question', {
+				err: `Question with id ${question.id} does not exist`,
+				status: 'rejected'
+			});
+		}
 	}.bind(this));
 
 	this.session.socket.on('up_question', function(question) {
 		const q = _.find(this.session.spredCast.questions, (q) => question.id === q.id);
-		q.nbVote += 1;
-		this.session.socket.to(this.session.spredCast.id).emit('up_question', q);
-		this.session.socket.emit('up_question', q);
+		if (q) {
+			q.nbVote += 1;
+			this.session.socket.to(this.session.spredCast.id).emit('up_question', q);
+			this.session.socket.emit('up_question', q);
+		} else {
+			this.session.socket.emit('up_question', {
+				err: `Question with id ${question.id} does not exist`,
+				status: 'rejected'
+			});
+		}
 	}.bind(this));
 
 	sendSpredCastHistory(session);
