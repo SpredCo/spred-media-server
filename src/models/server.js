@@ -22,11 +22,13 @@ var Server = function() {
 	};
 
 	this.options = {
-		key: fs.readFileSync('keys/spred.key'),
-		cert: fs.readFileSync('keys/spred.crt'),
-		requestCert: true,
-		rejectUnauthorized: false
+		key: fs.readFileSync(process.env.SPRED_MEDIA_SSL_KEY || 'keys/spred.key'),
+		cert: fs.readFileSync(process.env.SPRED_MEDIA_SSL_CERT || 'keys/spred.crt')
 	};
+
+	if (process.env.SPRED_MEDIA_SSL_CHAIN) {
+		this.options.ca = fs.readFileSync(process.env.SPRED_MEDIA_SSL_CHAIN);
+	}
 
 	console.log("Connecting server to Kurento Media Server...");
 	kurento(this.conf.kms_uri, function(error, _kurentoClient) {
