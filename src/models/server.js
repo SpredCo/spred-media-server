@@ -53,16 +53,12 @@ Server.prototype.start = function() {
 		res.setHeader('Access-Control-Request-Method', '*');
 		res.setHeader('Access-Control-Allow-Methods', 'OPTIONS, GET');
 		// res.setHeader('Access-Control-Allow-Headers', '*');
-	});
+	}).listen(port);
 	var wss = new io(httpsServer);
 
-	// wss.set('origins', '*:*');
 	// TODO: SPREDCASTS IN THE SERVER -> Need to get them from DB with Spred is ready
 	const spredcasts = [];
-
-	httpsServer.listen(port, function() {
-		console.log(`Open ${url.format(asUrl)} with a WebRTC capable browser`);
-	});
+	console.log(`Open ${url.format(asUrl)} with a WebRTC capable browser`);
 
 	wss.on('error', function(err) {
 		console.error(`Got error on socket.io init : `, err);
