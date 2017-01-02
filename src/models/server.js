@@ -17,7 +17,7 @@ var Server = function() {
 	const PORT = process.env.SPRED_MEDIA_PORT || 8443;
 	const KMS_URI = process.env.KMS_URI || 'ws://ec2-52-212-178-211.eu-west-1.compute.amazonaws.com:8888/kurento';
 	this.conf = {
-		as_uri: `http://0.0.0.0:${PORT}`,
+		as_uri: `https://0.0.0.0:${PORT}`,
 		kms_uri: KMS_URI
 	};
 
