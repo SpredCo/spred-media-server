@@ -1,32 +1,32 @@
 {
-  "name": "charpy-media-server",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node src/server.js"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/guillaume-g/charpy-media-server.git"
-  },
-  "author": "Guillaume Galas",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/guillaume-g/charpy-media-server/issues"
-  },
-  "homepage": "https://github.com/guillaume-g/charpy-media-server#readme",
-  "dependencies": {
-    "async": "^2.1.2",
-    "express": "^4.14.0",
-    "jasmine": "^2.5.2",
-    "kurento-client": "^6.6.0",
-    "lodash": "^4.16.4",
-    "mongoose": "^4.6.8",
-    "socket.io": "^1.5.1",
-    "spred-common": "git+https://github.com/SpredCo/common.git",
-    "url": "^0.11.0",
-    "ws": "^1.1.1"
-  }
+	"name": "charpy-media-server",
+	"version": "1.0.0",
+	"description": "",
+	"main": "index.js",
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1",
+		"start": "node src/server.js"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/guillaume-g/charpy-media-server.git"
+	},
+	"author": "Guillaume Galas",
+	"license": "ISC",
+	"bugs": {
+		"url": "https://github.com/guillaume-g/charpy-media-server/issues"
+	},
+	"homepage": "https://github.com/guillaume-g/charpy-media-server#readme",
+	"dependencies": {
+		"async": "^2.1.2",
+		"express": "^4.14.0",
+		"jasmine": "^2.5.2",
+		"kurento-client": "git+https://github.com/SpredCo/kurento-client-js.git",
+		"lodash": "^4.16.4",
+		"mongoose": "^4.6.8",
+		"socket.io": "^1.5.1",
+		"spred-common": "git+https://github.com/SpredCo/common.git",
+		"url": "^0.11.0",
+		"ws": "^1.1.1"
+	}
 }
