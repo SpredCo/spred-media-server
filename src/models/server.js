@@ -1,6 +1,6 @@
 const fs = require('fs');
 const async = require('async');
-const http = require('http');
+const https = require('https');
 const url = require('url');
 const io = require('socket.io');
 const _ = require('lodash');
@@ -45,7 +45,7 @@ var Server = function() {
 Server.prototype.start = function() {
 	var asUrl = url.parse(this.conf.as_uri);
 	var port = asUrl.port;
-	var httpsServer = http.createServer(function(res, res) {
+	var httpsServer = https.createServer(this.options, function(res, res) {
 		// Set CORS headers
 		res.setHeader('Access-Control-Allow-Origin', '*');
 		res.setHeader('Access-Control-Request-Method', '*');
