@@ -1,6 +1,6 @@
 const fs = require('fs');
 const async = require('async');
-const https = require('https');
+const http = require('http');
 const url = require('url');
 const io = require('socket.io');
 const _ = require('lodash');
@@ -13,11 +13,12 @@ const Spredcast = require('./spredcast');
 const Session = require('./session');
 const User = require('./user');
 
-var Server = function(options) {
-	const PORT = process.env.PORT || 3030;
+var Server = function() {
+	const PORT = process.env.SPRED_MEDIA_PORT || 8443;
+	const KMS_URI = process.env.KMS_URI || 'ws://ec2-52-212-178-211.eu-west-1.compute.amazonaws.com:8888/kurento';
 	this.conf = {
-		as_uri: options && options.as_uri ? options.as_uri : `http://0.0.0.0:${PORT}`,
-		kms_uri: options && options.kms_uri ? options.kms_uri : 'ws://localhost:8888/kurento'
+		as_uri: `http://0.0.0.0:${PORT}`,
+		kms_uri: KMS_URI
 	};
 
 	this.options = {
@@ -44,9 +45,16 @@ var Server = function(options) {
 Server.prototype.start = function() {
 	var asUrl = url.parse(this.conf.as_uri);
 	var port = asUrl.port;
-	var httpsServer = https.createServer(this.options);
+	var httpsServer = http.createServer(function(res, res) {
+		// Set CORS headers
+		res.setHeader('Access-Control-Allow-Origin', '*');
+		res.setHeader('Access-Control-Request-Method', '*');
+		res.setHeader('Access-Control-Allow-Methods', 'OPTIONS, GET');
+		// res.setHeader('Access-Control-Allow-Headers', '*');
+	});
 	var wss = new io(httpsServer);
 
+	// wss.set('origins', '*:*');
 	// TODO: SPREDCASTS IN THE SERVER -> Need to get them from DB with Spred is ready
 	const spredcasts = [];
 
@@ -151,6 +159,7 @@ function onAuthAnswer(kurentoClient, session, spredcasts, auth_answer) {
 				return initializePresenter(kurentoClient, session, next);
 			} else {
 				if (session.spredCast.isLive) {
+					if (!session.sdpOffer) return next();
 					return initializeViewer(session, next);
 				} else {
 					session.spredCast.addToPendingQueue(session);
@@ -191,22 +200,26 @@ function initializePresenter(kurentoClient, session, next) {
 				} else {
 					console.log(`spredCast(${session.spredCast.id}) has now a presenter live`);
 					session.spredCast.isLive = true;
-					async.eachLimit(session.spredCast.session_pending, 100, (session, next) => initializeViewer(session, function(err) {
-						if (err) {
-							console.error(`Got error when trying to get Spredcast for ${session.id} : `, err);
-							session.socket.emit('auth_answer', {
-								status: 'rejected',
-								message: err
-							});
-						} else {
-							console.log(`Sending auth_answer for ${session.user.pseudo}`);
-							session.socket.emit('auth_answer', {
-								status: 'accepted',
-								sdpAnswer: session.sdpAnswer,
-								user: session.user.pseudo
-							});
-						}
-					}));
+					async.eachLimit(session.spredCast.session_pending, 100, (session, next) => {
+						if (!session.sdpOffer) return next();
+						initializeViewer(session, function(err) {
+							if (err) {
+								console.error(`Got error when trying to get Spredcast for ${session.id} : `, err);
+								session.socket.emit('auth_answer', {
+									status: 'rejected',
+									message: err
+								});
+							} else {
+								console.log(`Sending auth_answer for ${session.user.pseudo}`);
+								session.socket.emit('auth_answer', {
+									status: 'accepted',
+									sdpAnswer: session.sdpAnswer,
+									user: session.user.pseudo
+								});
+							}
+							return next();
+						});
+					});
 					common.spredCastModel.updateUserCount(session.spredCast.id, 1);
 					console.info(`User ${session.user.pseudo} added as presenter in spredcast ${session.spredCast.id}`);
 					console.info(`${session.spredCast.session_pending.length} viewer(s) were waiting in the room.`);
