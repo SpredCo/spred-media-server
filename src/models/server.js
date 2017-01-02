@@ -52,6 +52,8 @@ Server.prototype.start = function() {
 		res.setHeader('Access-Control-Allow-Origin', '*');
 		res.setHeader('Access-Control-Request-Method', '*');
 		res.setHeader('Access-Control-Allow-Methods', 'OPTIONS, GET');
+		res.write("toto");
+		res.end();
 		// res.setHeader('Access-Control-Allow-Headers', '*');
 	}).listen(port);
 	var wss = new io(httpsServer);
