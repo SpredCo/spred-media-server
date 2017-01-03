@@ -3,24 +3,11 @@ const _ = require('lodash');
 var Spredcast = function(id) {
 	this.id = id;
 	this.presenter = null;
-	this.session_pending = [];
 	this.viewers = [];
 	this.messages = [];
 	this.questions = [];
 
 	return this;
-}
-
-Spredcast.prototype.addToPendingQueue = function(session) {
-	if (session) {
-		this.session_pending.push(session);
-	}
-};
-
-Spredcast.prototype.removeFromPendingQueue = function(session) {
-	if (session) {
-		_.pull(this.session_pending, session);
-	}
 }
 
 Spredcast.prototype.addViewer = function(viewer) {

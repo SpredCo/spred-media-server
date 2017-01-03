@@ -83,6 +83,16 @@ Server.prototype.start = function() {
 		session.socket.on('auth_answer', function(auth_answer) {
 			onAuthAnswer(kurentoClient, session, spredcasts, auth_answer);
 		});
+
+		session.socket.on('terminate_cast', function() {
+			if (session.spredCast) {
+				endSession(session);
+				_.forEach(session.spredCast.viewers, (viewer) => {
+					viewer.socket.emit('cast_terminated');
+					endSession(viewer);
+				});
+			}
+		});
 	}.bind(this));
 };
 
@@ -159,31 +169,15 @@ function onAuthAnswer(kurentoClient, session, spredcasts, auth_answer) {
 				return initializePresenter(kurentoClient, session, next);
 			} else {
 				if (session.spredCast.isLive) {
-					if (!session.sdpOffer) return next();
+					if (!session.sdpOffer) return next(null, session);
 					return initializeViewer(session, next);
 				} else {
-					session.spredCast.addToPendingQueue(session);
-					return next(null, "Presenter is not live yet.");
+					return next("Presenter is not live yet.", session);
 				}
 			}
 		}
-	], function(err, res) {
-		if (err) {
-			console.error(`Got error when trying to get Spredcast for ${session.id} : `, err);
-			session.socket.emit('auth_answer', {
-				status: 'rejected',
-				message: err
-			});
-		} else {
-			console.log(`Sending auth_answer for ${session.user.pseudo}`);
-			var payload = {
-				status: 'accepted',
-				sdpAnswer: session.sdpAnswer,
-				user: session.user.pseudo
-			};
-			if (res) payload.message = res;
-			session.socket.emit('auth_answer', payload);
-		}
+	], (err) => {
+		sendAuthAnswer(err, session);
 	});
 }
 
@@ -191,7 +185,6 @@ function initializePresenter(kurentoClient, session, next) {
 	async.waterfall([
 		(next) => KurentoUtils.createPresenter(kurentoClient, session, next),
 		(next) => {
-			session.spredCast.removeFromPendingQueue(session);
 			session.spredCast.presenter = session;
 			// Mettre à jour le state du cast (1 quand le presenter à join, 2 quand c'est terminé)
 			common.spredCastModel.updateState(session.spredCast.id, 1, function(err) {
@@ -200,29 +193,9 @@ function initializePresenter(kurentoClient, session, next) {
 				} else {
 					console.log(`spredCast(${session.spredCast.id}) has now a presenter live`);
 					session.spredCast.isLive = true;
-					async.eachLimit(session.spredCast.session_pending, 100, (session, next) => {
-						if (!session.sdpOffer) return next();
-						initializeViewer(session, function(err) {
-							if (err) {
-								console.error(`Got error when trying to get Spredcast for ${session.id} : `, err);
-								session.socket.emit('auth_answer', {
-									status: 'rejected',
-									message: err
-								});
-							} else {
-								console.log(`Sending auth_answer for ${session.user.pseudo}`);
-								session.socket.emit('auth_answer', {
-									status: 'accepted',
-									sdpAnswer: session.sdpAnswer,
-									user: session.user.pseudo
-								});
-							}
-							return next();
-						});
-					});
+					session.socket.to(session.spredCast.id).emit('reload_cast');
 					common.spredCastModel.updateUserCount(session.spredCast.id, 1);
 					console.info(`User ${session.user.pseudo} added as presenter in spredcast ${session.spredCast.id}`);
-					console.info(`${session.spredCast.session_pending.length} viewer(s) were waiting in the room.`);
 					return next(null, session.sdpAnswer);
 				}
 			});
@@ -235,7 +208,6 @@ function initializeViewer(session, next) {
 	async.waterfall([
 		(next) => KurentoUtils.createViewer(session, next),
 		(next) => {
-			session.spredCast.removeFromPendingQueue(session);
 			session.spredCast.addViewer(session);
 			common.spredCastModel.updateUserCount(session.spredCast.id, (session.spredCast.viewers + !!session.spredCast.presenter));
 			console.info(`User ${session.user.pseudo} added as viewer in room ${session.spredCast.id}`);
@@ -243,6 +215,26 @@ function initializeViewer(session, next) {
 			return next();
 		}
 	], next);
+}
+
+function sendAuthAnswer(err, session, next) {
+	if (err) {
+		console.error(`Got error when trying to get Spredcast for ${session.id} : `, err);
+		session.socket.emit('auth_answer', {
+			status: 'rejected',
+			message: err
+		});
+	} else {
+		console.log(`Sending auth_answer for ${session.user.pseudo}`);
+		session.socket.emit('auth_answer', {
+			status: 'accepted',
+			sdpAnswer: session.sdpAnswer,
+			user: session.user.pseudo
+		});
+	}
+	if (next && typeof next === "function") {
+		return next();
+	}
 }
 
 module.exports = new Server();
