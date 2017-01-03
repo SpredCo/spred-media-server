@@ -1,35 +1,35 @@
 {
-  "name": "charpy-media-server",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "postinstall": "./scripts/init.sh",
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node src/server.js"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/guillaume-g/charpy-media-server.git"
-  },
-  "author": "Guillaume Galas",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/guillaume-g/charpy-media-server/issues"
-  },
-  "homepage": "https://github.com/guillaume-g/charpy-media-server#readme",
-  "dependencies": {
-    "async": "^2.1.2",
-    "connect": "^3.5.0",
-    "express": "^4.14.0",
-    "jasmine": "^2.5.2",
-    "kurento-client": "git+https://github.com/SpredCo/kurento-client-js.git",
-    "lodash": "^4.16.4",
-    "mongoose": "^4.6.8",
-    "serve-static": "^1.11.1",
-    "socket.io": "^1.5.1",
-    "spred-common": "git+https://github.com/SpredCo/common.git",
-    "url": "^0.11.0",
-    "ws": "^1.1.1"
-  }
+	"name": "charpy-media-server",
+	"version": "1.0.0",
+	"description": "",
+	"main": "index.js",
+	"scripts": {
+		"postinstall": "./scripts/init.sh",
+		"test": "echo \"Error: no test specified\" && exit 1",
+		"start": "./scripts/init.sh && node src/server.js"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/guillaume-g/charpy-media-server.git"
+	},
+	"author": "Guillaume Galas",
+	"license": "ISC",
+	"bugs": {
+		"url": "https://github.com/guillaume-g/charpy-media-server/issues"
+	},
+	"homepage": "https://github.com/guillaume-g/charpy-media-server#readme",
+	"dependencies": {
+		"async": "^2.1.2",
+		"connect": "^3.5.0",
+		"express": "^4.14.0",
+		"jasmine": "^2.5.2",
+		"kurento-client": "git+https://github.com/SpredCo/kurento-client-js.git",
+		"lodash": "^4.16.4",
+		"mongoose": "^4.6.8",
+		"serve-static": "^1.11.1",
+		"socket.io": "^1.5.1",
+		"spred-common": "git+https://github.com/SpredCo/common.git",
+		"url": "^0.11.0",
+		"ws": "^1.1.1"
+	}
 }
