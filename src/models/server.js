@@ -156,7 +156,7 @@ function onAuthAnswer(kurentoClient, session, spredcasts, auth_answer) {
 			session.sdpOffer = auth_answer.sdpOffer;
 			console.log(`Token(${fToken.token}) for ${session.id} with pseudo ${session.user.pseudo}`);
 			console.log("----------------  Cast  ----------------");
-			console.log(fToken);
+			console.log(fToken.cast.id);
 			console.log("----------------------------------------")
 
 			session.castToken = fToken;
