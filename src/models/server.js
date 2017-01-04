@@ -155,11 +155,12 @@ function onAuthAnswer(kurentoClient, session, spredcasts, auth_answer) {
 			session.user.picture = fToken.user ? fToken.user.pictureUrl : "/img/profile.jpg";
 			session.sdpOffer = auth_answer.sdpOffer;
 			console.log(`Token(${fToken.token}) for ${session.id} with pseudo ${session.user.pseudo}`);
+			console.log(`Token(${fToken.token}) is linked to cast : `, fToken.cast);
 
 			session.castToken = fToken;
 			console.info(`${session.id} now identified as ${fToken.pseudo}`);
 			session.spredCast = _.find(spredcasts, function(spredcast) {
-				return spredcast.id === session.castToken.cast.id
+				return spredcast.id === session.castToken.cast.id;
 			});
 			if (!session.spredCast) {
 				console.info(`${session.castToken.pseudo} is joining in his spredcast(${session.castToken.cast.id}) as first.`);
