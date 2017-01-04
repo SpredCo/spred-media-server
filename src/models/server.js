@@ -127,6 +127,13 @@ function endSession(session, forced) {
 				if (err) {
 					console.error(`Got error while disconnecting for ID(${session.id}) : `, err);
 				}
+				var hasPresenter = session.spredCast.presenter ? 1 : 0;
+				session.socket.to(session.spredCast.id).emit('user_left', {
+					nbUsers: (session.spredCast.viewers.length - 1) + hasPresenter
+				});
+				session.socket.emit('user_left', {
+					nbUsers: (session.spredCast.viewers.length - 1) + hasPresenter
+				});
 				session.leaveCast();
 				session.close();
 				session = null;
@@ -242,7 +249,14 @@ function sendAuthAnswer(err, session, next) {
 		session.socket.emit('auth_answer', {
 			status: 'accepted',
 			sdpAnswer: session.sdpAnswer,
-			user: session.user.pseudo
+			user: session.user.pseudo,
+		});
+		var hasPresenter = session.spredCast.presenter ? 1 : 0;
+		session.socket.to(session.spredCast.id).emit('user_joined', {
+			nbUsers: session.spredCast.viewers.length + hasPresenter
+		});
+		session.socket.emit('user_joined', {
+			nbUsers: session.spredCast.viewers.length + hasPresenter
 		});
 	}
 	if (next && typeof next === "function") {
