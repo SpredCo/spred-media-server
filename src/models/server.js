@@ -86,7 +86,7 @@ Server.prototype.start = function() {
 
 		session.socket.on('terminate_cast', function() {
 			if (session.spredCast) {
-				endSession(session);
+				endSession(session, true);
 				_.forEach(session.spredCast.viewers, (viewer) => {
 					viewer.socket.emit('cast_terminated');
 					endSession(viewer);
@@ -101,7 +101,7 @@ function requestIdentity(session) {
 	session.socket.emit('auth_request', {});
 }
 
-function endSession(session) {
+function endSession(session, forced) {
 	if (session && session.id) {
 		console.info(`Connection with ${session.id} lost.`);
 		if (session.spredCast) {
@@ -115,7 +115,7 @@ function endSession(session) {
 				}),
 				(next) => {
 					if (!session.spredCast || !session.spredCast.presenter || session.spredCast.presenter.id !== session.id) return next();
-					common.spredCastModel.updateState(session.spredCast.id, 0, (err) => {
+					common.spredCastModel.updateState(session.spredCast.id, forced ? 2 : 0, (err) => {
 						if (err) {
 							return next(err);
 						}
@@ -127,6 +127,7 @@ function endSession(session) {
 				if (err) {
 					console.error(`Got error while disconnecting for ID(${session.id}) : `, err);
 				}
+				session.leaveCast();
 				session.close();
 				session = null;
 			});
@@ -138,6 +139,10 @@ function endSession(session) {
 
 function onAuthAnswer(kurentoClient, session, spredcasts, auth_answer) {
 	async.waterfall([
+		(next) => {
+			if (session.spredCast) session.leaveCast();
+			return next();
+		},
 		(next) => common.castTokenModel.getByToken(auth_answer.token, next),
 		(fToken, next) => {
 			if (fToken === null) {
@@ -186,7 +191,6 @@ function initializePresenter(kurentoClient, session, next) {
 		(next) => KurentoUtils.createPresenter(kurentoClient, session, next),
 		(next) => {
 			session.spredCast.presenter = session;
-			// Mettre à jour le state du cast (1 quand le presenter à join, 2 quand c'est terminé)
 			common.spredCastModel.updateState(session.spredCast.id, 1, function(err) {
 				if (err) {
 					console.log(`Error while trying to update spredCast status : `, err);
@@ -218,6 +222,7 @@ function initializeViewer(session, next) {
 }
 
 function sendAuthAnswer(err, session, next) {
+	console.log(`Sending Auth Answer to ${session.user.pseudo}`);
 	if (err) {
 		console.error(`Got error when trying to get Spredcast for ${session.id} : `, err);
 		session.socket.emit('auth_answer', {

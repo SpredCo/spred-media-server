@@ -9,6 +9,7 @@ var KurentoUtils = function() {
 KurentoUtils.prototype.createPresenter = function(kurentoClient, session, next) {
 	async.waterfall([
 		(next) => {
+			if (session.pipeline) return next();
 			kurentoClient.create('MediaPipeline', function(error, pipeline) {
 				if (error) {
 					session.close();
@@ -130,6 +131,7 @@ KurentoUtils.prototype.runSavedIceCandidate = function(session) {
 			session.webRtcEndpoint.addIceCandidate(savedIceCandidate);
 		});
 	}
+	session.savedIceCandidate = [];
 }
 
 KurentoUtils.prototype.processIceCandidate = function(session, data) {

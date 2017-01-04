@@ -32,18 +32,29 @@ Session.prototype.addIceCandidateToQueue = function(iceCandidate) {
 	}
 };
 
-Session.prototype.close = function() {
-	if (this.pipeline) {
-		this.pipeline.release();
-	} else if (this.webRtcEndpoint) {
-		this.webRtcEndpoint.release();
-	}
+Session.prototype.leaveCast = function() {
 	if (this.spredCast) {
 		if (this.spredCast.presenter && this.spredCast.presenter.id === this.id) {
+			_.forEach(this.spredCast.viewers, (session) => {
+				session.close();
+			});
 			this.spredCast.presenter = null;
 		} else {
 			_.remove(this.spredCast.viewers, (viewer) => viewer.id === this.id);
 		}
+		console.log(`Session[${this.id}] with user[${this.user ? this.user.pseudo : 'anonymous'}] is leaving spredCast[${this.spredCast.id}].`)
+		this.spredCast = null;
+		if (this.webRtcEndpoint) {
+			this.webRtcEndpoint.release();
+			this.webRtcEndpoint = null;
+		}
+	}
+}
+
+Session.prototype.close = function() {
+	if (this.pipeline) {
+		this.pipeline.release();
+		this.pipeline = null;
 	}
 	console.info(`Session[${this.id}] with user[${this.user ? this.user.pseudo : 'anonymous'}] now close.`);
 }
