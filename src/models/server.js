@@ -222,7 +222,7 @@ function initializeViewer(session, next) {
 }
 
 function sendAuthAnswer(err, session, next) {
-	console.log(`Sending Auth Answer to ${session.user.pseudo}`);
+	console.log(`Sending Auth Answer to ${session.user ? session.user.pseudo : 'Anonymous session(' + session.id + ')'}`);
 	if (err) {
 		console.error(`Got error when trying to get Spredcast for ${session.id} : `, err);
 		session.socket.emit('auth_answer', {
