@@ -151,6 +151,7 @@ function onAuthAnswer(kurentoClient, session, spredcasts, auth_answer) {
 					message: "You don't have permissions to access this spredcast"
 				});
 			}
+			console.log(fToken.token);
 			session.user = new User(fToken.user, fToken.pseudo);
 			session.user.picture = fToken.user ? fToken.user.pictureUrl : "/img/profile.jpg";
 			session.sdpOffer = auth_answer.sdpOffer;
@@ -174,7 +175,11 @@ function onAuthAnswer(kurentoClient, session, spredcasts, auth_answer) {
 				return initializePresenter(kurentoClient, session, next);
 			} else {
 				if (session.spredCast.isLive) {
-					if (!session.sdpOffer) return next(null, session);
+					if (!session.sdpOffer) {
+						console.error(`No SDPOffer found for ${session.id} with pseudo ${session.user.pseudo}`);
+						return next(null, session);
+					}
+					console.log(`Initializing Viewer connection for ${session.id} with pseudo ${session.user.pseudo}`);
 					return initializeViewer(session, next);
 				} else {
 					return next("Presenter is not live yet.", session);
@@ -222,7 +227,7 @@ function initializeViewer(session, next) {
 }
 
 function sendAuthAnswer(err, session, next) {
-	console.log(`Sending Auth Answer to ${session.user ? session.user.pseudo : 'Anonymous session(' + session.id + ')'}`);
+	console.log(`Generating auth_answer to ${session.user ? session.user.pseudo : 'Anonymous session(' + session.id + ')'}`);
 	if (err) {
 		console.error(`Got error when trying to get Spredcast for ${session.id} : `, err);
 		session.socket.emit('auth_answer', {
@@ -230,7 +235,7 @@ function sendAuthAnswer(err, session, next) {
 			message: err
 		});
 	} else {
-		console.log(`Sending auth_answer for ${session.user.pseudo}`);
+		console.log(`Sending success auth_answer for ${session.user ? session.user.pseudo : 'Anonymous session(' + session.id + ')'}`);
 		session.socket.emit('auth_answer', {
 			status: 'accepted',
 			sdpAnswer: session.sdpAnswer,
