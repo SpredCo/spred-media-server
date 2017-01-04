@@ -155,7 +155,8 @@ function onAuthAnswer(kurentoClient, session, spredcasts, auth_answer) {
 			session.user.picture = fToken.user ? fToken.user.pictureUrl : "/img/profile.jpg";
 			session.sdpOffer = auth_answer.sdpOffer;
 			console.log(`Token(${fToken.token}) for ${session.id} with pseudo ${session.user.pseudo}`);
-			console.log(`Token(${fToken.token}) is linked to cast : `, fToken.cast);
+			console.log("Cast found :");
+			console.log(`fToken.cast`);
 
 			session.castToken = fToken;
 			console.info(`${session.id} now identified as ${fToken.pseudo}`);
