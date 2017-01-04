@@ -151,10 +151,10 @@ function onAuthAnswer(kurentoClient, session, spredcasts, auth_answer) {
 					message: "You don't have permissions to access this spredcast"
 				});
 			}
-			console.log(fToken.token);
 			session.user = new User(fToken.user, fToken.pseudo);
 			session.user.picture = fToken.user ? fToken.user.pictureUrl : "/img/profile.jpg";
 			session.sdpOffer = auth_answer.sdpOffer;
+			console.log(`Token(${fToken.token}) for ${session.id} with pseudo ${session.user.pseudo}`);
 
 			session.castToken = fToken;
 			console.info(`${session.id} now identified as ${fToken.pseudo}`);
