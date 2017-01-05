@@ -207,7 +207,7 @@ function onAuthAnswer(kurentoClient, session, spredcasts, auth_answer) {
 					console.log(`Initializing Viewer connection for ${session.id} with pseudo ${session.user.pseudo}`);
 					return initializeViewer(session, next);
 				} else {
-					return next("Presenter is not live yet.", session);
+					return next("Ce cast n'est pas encore live. Quittez ce cast et attendez que celui-ci passe en live :)", session);
 				}
 			}
 		}
