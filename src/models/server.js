@@ -171,9 +171,7 @@ function onAuthAnswer(kurentoClient, session, spredcasts, auth_answer) {
 		(fToken, next) => {
 			if (fToken === null) {
 				console.error(`${session.id} trying to access a spredcast without permissions`);
-				return next({
-					message: "You don't have permissions to access this spredcast"
-				});
+				return next("Vous n'avez pas le droit d'accéder à ce spredCast.");
 			}
 			session.user = new User(fToken.user, fToken.pseudo);
 			session.user.picture = fToken.user ? fToken.user.pictureUrl : "/img/profile.jpg";
