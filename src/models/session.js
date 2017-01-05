@@ -57,6 +57,7 @@ Session.prototype.close = function() {
 		this.pipeline = null;
 	}
 	console.info(`Session[${this.id}] with user[${this.user ? this.user.pseudo : 'anonymous'}] now close.`);
+	this.id = null;
 }
 
 Session.prototype.enableChat = function() {

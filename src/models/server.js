@@ -73,7 +73,7 @@ Server.prototype.start = function() {
 		requestIdentity(session);
 
 		session.socket.on('disconnect', function() {
-			endSession(session);
+			endSession(session, false);
 		});
 
 		session.socket.on('ice_candidate', function(ice_candidate) {
@@ -86,10 +86,13 @@ Server.prototype.start = function() {
 
 		session.socket.on('terminate_cast', function() {
 			if (session.spredCast) {
-				endSession(session, true);
-				_.forEach(session.spredCast.viewers, (viewer) => {
-					viewer.socket.emit('cast_terminated');
-					endSession(viewer);
+				const viewers = session.spredCast.viewers.slice();
+				endSession(session, true, function() {
+					_.forEach(viewers, (viewer) => {
+						viewer.socket.emit('cast_terminated');
+						endSession(viewer);
+					});
+					session.socket.emit('cast_terminated');
 				});
 			}
 		});
@@ -101,7 +104,7 @@ function requestIdentity(session) {
 	session.socket.emit('auth_request', {});
 }
 
-function endSession(session, forced) {
+function endSession(session, forced, next) {
 	if (session && session.id) {
 		console.info(`Connection with ${session.id} lost.`);
 		if (session.spredCast) {
@@ -114,10 +117,21 @@ function endSession(session, forced) {
 					return next();
 				}),
 				(next) => {
+					console.log(session.user.pseudo);
+					session.chat.sendMessage(session.chat.generateMessage(' a quitté le chat.'));
 					if (!session.spredCast || !session.spredCast.presenter || session.spredCast.presenter.id !== session.id) return next();
 					common.spredCastModel.updateState(session.spredCast.id, forced ? 2 : 0, (err) => {
 						if (err) {
 							return next(err);
+						}
+						if (forced) {
+							session.socket.to(session.spredCast.id).emit('presenter_left', {
+								message: `Le spredCaster @${session.user.pseudo} a quitté le cast.`
+							});
+						} else {
+							session.socket.to(session.spredCast.id).emit('presenter_left', {
+								message: `Le spredCaster @${session.user.pseudo} a quitté le cast. Celui-ci devrait reprendre automatiquement sous peu...`
+							});
 						}
 						console.log(`Presenter(${session.id}) has left the spredCast(${session.spredCast.id}).`);
 						return next();
@@ -137,6 +151,9 @@ function endSession(session, forced) {
 				session.leaveCast();
 				session.close();
 				session = null;
+				if (next && typeof next === 'function') {
+					return next();
+				}
 			});
 		}
 	} else {

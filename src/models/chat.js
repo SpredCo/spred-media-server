@@ -55,6 +55,13 @@ var Chat = function(session) {
 	return this;
 }
 
+Chat.prototype.generateMessage = function(content) {
+	const message = new Message(this.session.spredCast.messages.length + 1);
+	message.text = content;
+	this.session.spredCast.messages.push(message);
+	return message;
+}
+
 Chat.prototype.sendQuestion = function(question) {
 	question.sender = this.session.user.pseudo;
 	question.user_picture = this.session.user.picture;
